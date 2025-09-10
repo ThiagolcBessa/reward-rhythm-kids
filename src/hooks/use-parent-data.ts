@@ -113,24 +113,13 @@ export const useMyKids = () => {
     queryFn: async () => {
       if (!user) return [];
       
-      // First get the user's family
-      const { data: family, error: familyError } = await supabase
-        .from('family')
-        .select('id')
-        .eq('owner_uid', user.id)
-        .single();
-      
-      if (familyError || !family) return [];
-      
-      // Then get kids from that family
       const { data, error } = await supabase
-        .from('kid')
+        .from('my_kids' as any)
         .select('*')
-        .eq('family_id', family.id)
-        .order('created_at', { ascending: true });
+        .order('display_name', { ascending: true });
       
       if (error) throw error;
-      return data as Kid[];
+      return (data as unknown) as Kid[];
     },
     enabled: !!user,
   });
