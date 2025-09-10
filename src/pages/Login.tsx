@@ -124,9 +124,10 @@ const Login = () => {
       });
     } else {
       // Redirect will happen automatically via auth state change
-      const urlParams = new URLSearchParams(window.location.search);
-      const returnTo = urlParams.get('returnTo');
-      window.location.href = returnTo ? decodeURIComponent(returnTo) : '/';
+      toast({
+        title: "Welcome back!",
+        description: "You have been signed in successfully.",
+      });
     }
     
     setIsSigningIn(false);
@@ -161,10 +162,11 @@ const Login = () => {
         description: "We've sent you a confirmation link to complete your registration.",
       });
     } else {
-      // Auto sign in successful
-      const urlParams = new URLSearchParams(window.location.search);
-      const returnTo = urlParams.get('returnTo');
-      window.location.href = returnTo ? decodeURIComponent(returnTo) : '/';
+      // Auto sign in successful - redirect will happen automatically via auth state change
+      toast({
+        title: "Account created!",
+        description: "Welcome! You have been signed in successfully.",
+      });
     }
     
     setIsSigningUp(false);
@@ -177,7 +179,7 @@ const Login = () => {
     const { error } = await supabase.auth.signInWithOtp({
       email: magicLinkEmail,
       options: {
-        emailRedirectTo: window.location.origin
+        emailRedirectTo: `${window.location.origin}${window.location.pathname}${window.location.search}`
       }
     });
 
