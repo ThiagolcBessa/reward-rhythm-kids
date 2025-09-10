@@ -7,7 +7,6 @@ import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute, PublicRoute } from "@/components/ProtectedRoute";
 import { RedirectAuthToLogin } from "@/components/RedirectAuthToLogin";
 import Index from "./pages/Index";
-import Auth from "./pages/Auth";
 import Login from "./pages/Login";
 import ResetPassword from "./pages/ResetPassword";
 import UpdatePassword from "./pages/UpdatePassword";
