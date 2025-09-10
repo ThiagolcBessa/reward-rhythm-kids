@@ -1,7 +1,10 @@
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/use-auth';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import OverviewTab from '@/components/parent/OverviewTab';
 import TaskTemplatesTab from '@/components/parent/TaskTemplatesTab';
 import RewardsTab from '@/components/parent/RewardsTab';
@@ -14,11 +17,32 @@ import {
   Gift, 
   Package, 
   Users, 
-  Settings 
+  Settings,
+  LogOut
 } from 'lucide-react';
 
 const ParentDashboard = () => {
   const { user, loading } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const handleSignOut = async () => {
+    const { error } = await supabase.auth.signOut();
+    
+    if (error) {
+      toast({
+        title: "Error signing out",
+        description: error.message,
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Signed out",
+        description: "You have been successfully signed out.",
+      });
+      navigate('/login');
+    }
+  };
   
   if (loading) {
     return (
@@ -46,13 +70,25 @@ const ParentDashboard = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-fun-blue/5 to-fun-purple/5">
       <div className="container mx-auto p-4 md:p-6 space-y-6">
-        <div className="text-center md:text-left">
-          <h1 className="text-3xl md:text-4xl font-bold text-fun-purple mb-2">
-            Parent Dashboard
-          </h1>
-          <p className="text-lg text-muted-foreground">
-            Manage your family's reward system
-          </p>
+        <div className="flex items-center justify-between">
+          <div className="text-center md:text-left">
+            <h1 className="text-3xl md:text-4xl font-bold text-fun-purple mb-2">
+              Parent Dashboard
+            </h1>
+            <p className="text-lg text-muted-foreground">
+              Manage your family's reward system
+            </p>
+          </div>
+          
+          <Button
+            variant="outline" 
+            size="sm"
+            onClick={handleSignOut}
+            className="flex items-center gap-2 text-muted-foreground hover:text-destructive hover:border-destructive/50"
+          >
+            <LogOut className="h-4 w-4" />
+            <span className="hidden sm:inline">Sign Out</span>
+          </Button>
         </div>
         
         <Tabs defaultValue="overview" className="w-full">
