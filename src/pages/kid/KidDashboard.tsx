@@ -5,14 +5,14 @@ import { TaskCard } from '@/components/kid/TaskCard';
 import { NavigationButtons } from '@/components/kid/NavigationButtons';
 import { BonusButton } from '@/components/kid/BonusButton';
 import { TaskCardSkeleton, HeaderSkeleton } from '@/components/kid/LoadingSkeleton';
-import { useKidTodayTasks } from '@/hooks/use-supabase-rpc';
+import { useKidTodayTasks, useKidInfo } from '@/hooks/use-supabase-rpc';
 
 const KidDashboard = () => {
   const { kidId } = useParams<{ kidId: string }>();
-  const { data: tasks, isLoading } = useKidTodayTasks(kidId!);
+  const { data: tasks, isLoading: tasksLoading } = useKidTodayTasks(kidId!);
+  const { data: kidInfo, isLoading: kidLoading } = useKidInfo(kidId!);
 
-  // Mock kid name - in real app, this would come from API
-  const kidName = "Alex"; // This should be fetched from kid data
+  const isLoading = tasksLoading || kidLoading;
 
   if (isLoading) {
     return (
@@ -36,7 +36,7 @@ const KidDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-kid-fun/10 to-white pb-24">
-      <KidHeader kidName={kidName} />
+      <KidHeader kidName={kidInfo?.display_name || 'Loading...'} />
       
       <div className="p-4 max-w-md mx-auto space-y-6">
         {/* Today's Date */}

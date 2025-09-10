@@ -1,6 +1,23 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
+// Hook to get kid information
+export const useKidInfo = (kidId: string) => {
+  return useQuery({
+    queryKey: ['kid-info', kidId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('kid')
+        .select('display_name, age, color_hex')
+        .eq('id', kidId)
+        .single();
+      
+      if (error) throw error;
+      return data as { display_name: string; age: number | null; color_hex: string | null };
+    },
+  });
+};
+
 // Types for our RPC functions
 export interface DailyTask {
   id: string;
