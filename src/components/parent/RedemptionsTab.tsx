@@ -5,7 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Skeleton } from '@/components/ui/skeleton';
 import { useRedemptions, useDecideRedemption } from '@/hooks/use-parent-data';
 import { format } from 'date-fns';
-import { Check, X, Package, Star, Clock, Gift, AlertCircle } from 'lucide-react';
+import { Check, X, Package, Star, Clock, Gift, AlertCircle, Loader2 } from 'lucide-react';
 import ReactConfetti from 'react-confetti';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
@@ -14,18 +14,44 @@ const RedemptionsTab = () => {
   const { data: redemptions, isLoading } = useRedemptions();
   const decideRedemption = useDecideRedemption();
   const [showConfetti, setShowConfetti] = useState(false);
+  const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>({});
   const { toast } = useToast();
   
   const handleDecision = async (redemptionId: string, decision: 'approved' | 'rejected' | 'delivered') => {
+    setLoadingStates(prev => ({ ...prev, [redemptionId]: true }));
+    
     try {
-      await decideRedemption.mutateAsync({ redemptionId, decision });
+      const result = await decideRedemption.mutateAsync({ redemptionId, decision });
       
       if (decision === 'approved') {
         setShowConfetti(true);
         setTimeout(() => setShowConfetti(false), 3000);
+        
+        // Enhanced success toast with balance info
+        const redemption = redemptions?.find(r => r.id === redemptionId);
+        if (redemption && result && typeof result === 'object' && 'kid_current_balance' in result) {
+          const typedResult = result as { kid_current_balance: number };
+          toast({
+            title: "🎉 Reward Approved!",
+            description: `${redemption.kid.display_name}'s new balance: ${typedResult.kid_current_balance} points`,
+          });
+        }
+      } else if (decision === 'rejected') {
+        toast({
+          title: "Redemption Rejected",
+          description: "The reward request has been declined.",
+          variant: "default"
+        });
+      } else if (decision === 'delivered') {
+        toast({
+          title: "✅ Reward Delivered",
+          description: "The reward has been marked as delivered successfully.",
+        });
       }
     } catch (error) {
       // Error is handled by the mutation hook's onError
+    } finally {
+      setLoadingStates(prev => ({ ...prev, [redemptionId]: false }));
     }
   };
   
@@ -179,19 +205,27 @@ const RedemptionsTab = () => {
                             size="sm"
                             variant="outline"
                             onClick={() => handleDecision(redemption.id, 'rejected')}
-                            disabled={decideRedemption.isPending}
+                            disabled={loadingStates[redemption.id]}
                             className="border-red-200 text-red-600 hover:bg-red-50"
                           >
-                            <X className="h-4 w-4 mr-1" />
+                            {loadingStates[redemption.id] ? (
+                              <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                            ) : (
+                              <X className="h-4 w-4 mr-1" />
+                            )}
                             Reject
                           </Button>
                           <Button
                             size="sm"
                             onClick={() => handleDecision(redemption.id, 'approved')}
-                            disabled={decideRedemption.isPending}
+                            disabled={loadingStates[redemption.id]}
                             className="bg-fun-green hover:bg-fun-green/90 text-white shadow-lg"
                           >
-                            <Check className="h-4 w-4 mr-1" />
+                            {loadingStates[redemption.id] ? (
+                              <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                            ) : (
+                              <Check className="h-4 w-4 mr-1" />
+                            )}
                             Approve
                           </Button>
                         </div>
@@ -240,19 +274,27 @@ const RedemptionsTab = () => {
                           size="sm"
                           variant="outline"
                           onClick={() => handleDecision(redemption.id, 'rejected')}
-                          disabled={decideRedemption.isPending}
+                          disabled={loadingStates[redemption.id]}
                           className="flex-1 border-red-200 text-red-600 hover:bg-red-50"
                         >
-                          <X className="h-4 w-4 mr-2" />
+                          {loadingStates[redemption.id] ? (
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          ) : (
+                            <X className="h-4 w-4 mr-2" />
+                          )}
                           Reject
                         </Button>
                         <Button
                           size="sm"
                           onClick={() => handleDecision(redemption.id, 'approved')}
-                          disabled={decideRedemption.isPending}
+                          disabled={loadingStates[redemption.id]}
                           className="flex-1 bg-fun-green hover:bg-fun-green/90 text-white shadow-lg"
                         >
-                          <Check className="h-4 w-4 mr-2" />
+                          {loadingStates[redemption.id] ? (
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          ) : (
+                            <Check className="h-4 w-4 mr-2" />
+                          )}
                           Approve
                         </Button>
                       </div>
@@ -296,10 +338,14 @@ const RedemptionsTab = () => {
                   <Button
                     size="sm"
                     onClick={() => handleDecision(redemption.id, 'delivered')}
-                    disabled={decideRedemption.isPending}
+                    disabled={loadingStates[redemption.id]}
                     className="bg-fun-blue hover:bg-fun-blue/90 text-white shadow-lg"
                   >
-                    <Package className="h-4 w-4 mr-2" />
+                    {loadingStates[redemption.id] ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Package className="h-4 w-4 mr-2" />
+                    )}
                     Mark Delivered
                   </Button>
                 </div>
