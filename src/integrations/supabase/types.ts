@@ -341,6 +341,13 @@ export type Database = {
         Args: { p_daily_task_id: string }
         Returns: number
       }
+      decide_redemption: {
+        Args: {
+          p_decision: Database["public"]["Enums"]["redemption_status"]
+          p_redemption_id: string
+        }
+        Returns: Json
+      }
       generate_today_tasks: {
         Args: { p_family_id: string; p_target_date?: string }
         Returns: number
@@ -353,9 +360,17 @@ export type Database = {
         Args: { p_kid_id: string }
         Returns: number
       }
+      get_kid_redemptions: {
+        Args: { p_kid_id: string }
+        Returns: Json
+      }
       grant_bonus: {
         Args: { p_kid_id: string; p_period: string }
         Returns: number
+      }
+      redeem_reward: {
+        Args: { p_kid_id: string; p_reward_id: string }
+        Returns: Json
       }
     }
     Enums: {
