@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Settings } from 'lucide-react';
+import { PWAInstallButton } from '@/components/PWAInstallButton';
 
 const Index = () => {
   const { user } = useAuth();
@@ -22,13 +23,17 @@ const Index = () => {
               Transform daily tasks into fun adventures! Motivate your kids with a points-based reward system.
             </p>
             
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-6">
               <Button asChild size="lg" className="text-lg px-8">
                 <Link to="/login">Get Started</Link>
               </Button>
               <Button asChild variant="outline" size="lg" className="text-lg px-8">
                 <Link to="/login">Sign In</Link>
               </Button>
+            </div>
+            
+            <div className="flex justify-center">
+              <PWAInstallButton />
             </div>
           </div>
         </div>
@@ -111,13 +116,16 @@ const Index = () => {
           </div>
         )}
 
-        <div className="text-center">
+        <div className="text-center space-y-4">
           <Button asChild variant="outline" size="lg" className="gap-2">
             <Link to="/parent">
               <Settings className="h-4 w-4" />
               Parent Mode
             </Link>
           </Button>
+          <div>
+            <PWAInstallButton />
+          </div>
         </div>
       </div>
     </div>
