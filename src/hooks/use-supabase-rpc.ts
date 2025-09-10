@@ -10,10 +10,10 @@ export const useKidInfo = (kidId: string) => {
         .from('kid')
         .select('display_name, age, color_hex')
         .eq('id', kidId)
-        .single();
+        .maybeSingle();
       
       if (error) throw error;
-      return data as { display_name: string; age: number | null; color_hex: string | null };
+      return data as { display_name: string; age: number | null; color_hex: string | null } | null;
     },
   });
 };
@@ -105,9 +105,10 @@ export const useKidRewards = (kidId: string) => {
         .from('kid')
         .select('family_id')
         .eq('id', kidId)
-        .single();
+        .maybeSingle();
       
       if (kidError) throw kidError;
+      if (!kidData) return [];
       
       // Then get active rewards for that family
       const { data, error } = await supabase

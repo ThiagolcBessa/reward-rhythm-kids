@@ -4,14 +4,14 @@ import { KidHeader } from '@/components/kid/KidHeader';
 import { RewardCard } from '@/components/kid/RewardCard';
 import { NavigationButtons } from '@/components/kid/NavigationButtons';
 import { RewardCardSkeleton, HeaderSkeleton } from '@/components/kid/LoadingSkeleton';
-import { useKidRewards } from '@/hooks/use-supabase-rpc';
+import { useKidRewards, useKidInfo } from '@/hooks/use-supabase-rpc';
 
 const KidRewards = () => {
   const { kidId } = useParams<{ kidId: string }>();
-  const { data: rewards, isLoading } = useKidRewards(kidId!);
+  const { data: rewards, isLoading: rewardsLoading } = useKidRewards(kidId!);
+  const { data: kidInfo, isLoading: kidLoading } = useKidInfo(kidId!);
 
-  // Mock kid name - in real app, this would come from API
-  const kidName = "Alex";
+  const isLoading = rewardsLoading || kidLoading;
 
   if (isLoading) {
     return (
@@ -31,7 +31,7 @@ const KidRewards = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-kid-warning/10 to-white pb-24">
-      <KidHeader kidName={kidName} />
+      <KidHeader kidName={kidInfo?.display_name || 'Loading...'} />
       
       <div className="p-4 max-w-md mx-auto space-y-6">
         {/* Header */}
@@ -59,9 +59,11 @@ const KidRewards = () => {
               </p>
             </div>
           ) : (
-            rewards.map((reward) => (
-              <RewardCard key={reward.id} reward={reward} kidId={kidId!} />
-            ))
+            <div className="grid gap-4">
+              {rewards.map((reward) => (
+                <RewardCard key={reward.id} reward={reward} kidId={kidId!} />
+              ))}
+            </div>
           )}
         </div>
 
