@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/use-auth";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
+import Login from "./pages/Login";
 import ParentDashboard from "./pages/ParentDashboard";
 import NotFound from "./pages/NotFound";
 import KidDashboard from "./pages/kid/KidDashboard";
@@ -24,6 +25,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/login" element={<Login />} />
             <Route path="/parent" element={<ParentDashboard />} />
             
             {/* Kid Experience Routes */}
