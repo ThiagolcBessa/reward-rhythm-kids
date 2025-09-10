@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/use-auth";
+import { ProtectedRoute, PublicRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Login from "./pages/Login";
@@ -24,14 +25,14 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/parent" element={<ParentDashboard />} />
+            <Route path="/auth" element={<PublicRoute><Auth /></PublicRoute>} />
+            <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+            <Route path="/parent" element={<ProtectedRoute><ParentDashboard /></ProtectedRoute>} />
             
-            {/* Kid Experience Routes */}
-            <Route path="/kid/:kidId" element={<KidDashboard />} />
-            <Route path="/kid/:kidId/rewards" element={<KidRewards />} />
-            <Route path="/kid/:kidId/history" element={<KidHistory />} />
+            {/* Kid Experience Routes - Protected */}
+            <Route path="/kid/:kidId" element={<ProtectedRoute><KidDashboard /></ProtectedRoute>} />
+            <Route path="/kid/:kidId/rewards" element={<ProtectedRoute><KidRewards /></ProtectedRoute>} />
+            <Route path="/kid/:kidId/history" element={<ProtectedRoute><KidHistory /></ProtectedRoute>} />
             
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

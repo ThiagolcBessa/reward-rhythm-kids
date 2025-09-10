@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Navigate, Link, useSearchParams } from 'react-router-dom';
+import { Navigate, Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,8 +12,6 @@ import { supabase } from '@/integrations/supabase/client';
 
 const Login = () => {
   const { user, loading } = useAuth();
-  const [searchParams] = useSearchParams();
-  const returnTo = searchParams.get('returnTo') || '/';
   
   // Sign in form state
   const [signInForm, setSignInForm] = useState({ email: '', password: '' });
@@ -43,7 +41,14 @@ const Login = () => {
   }
 
   if (user) {
-    return <Navigate to="/parent" replace />;
+    const urlParams = new URLSearchParams(window.location.search);
+    const returnTo = urlParams.get('returnTo');
+    
+    if (returnTo) {
+      return <Navigate to={decodeURIComponent(returnTo)} replace />;
+    }
+    
+    return <Navigate to="/" replace />;
   }
 
   const validateSignInForm = () => {
@@ -119,7 +124,9 @@ const Login = () => {
       });
     } else {
       // Redirect will happen automatically via auth state change
-      window.location.href = returnTo;
+      const urlParams = new URLSearchParams(window.location.search);
+      const returnTo = urlParams.get('returnTo');
+      window.location.href = returnTo ? decodeURIComponent(returnTo) : '/';
     }
     
     setIsSigningIn(false);
@@ -136,7 +143,7 @@ const Login = () => {
       email: signUpForm.email,
       password: signUpForm.password,
       options: {
-        emailRedirectTo: `${window.location.origin}${returnTo}`
+        emailRedirectTo: `${window.location.origin}${window.location.pathname}${window.location.search}`
       }
     });
 
@@ -155,7 +162,9 @@ const Login = () => {
       });
     } else {
       // Auto sign in successful
-      window.location.href = returnTo;
+      const urlParams = new URLSearchParams(window.location.search);
+      const returnTo = urlParams.get('returnTo');
+      window.location.href = returnTo ? decodeURIComponent(returnTo) : '/';
     }
     
     setIsSigningUp(false);
