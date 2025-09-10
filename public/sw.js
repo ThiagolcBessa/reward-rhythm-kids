@@ -5,6 +5,7 @@ const urlsToCache = [
   '/offline.html',
   '/manifest.json',
   '/parent',
+  '/parent/redemptions',
   '/kid',
   '/login'
 ];
