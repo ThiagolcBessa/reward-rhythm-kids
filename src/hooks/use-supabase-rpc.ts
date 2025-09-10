@@ -33,6 +33,17 @@ export interface DailyTask {
   };
 }
 
+// Type for get_today_tasks RPC response
+interface TodayTaskRpcResponse {
+  daily_task_id: string;
+  status: string;
+  points_awarded: number | null;
+  title: string;
+  icon_emoji: string;
+  base_points: number;
+  due_date: string;
+}
+
 export interface Reward {
   id: string;
   family_id: string;
@@ -70,28 +81,34 @@ export const useKidBalance = (kidId: string) => {
 
 // Hook to get today's tasks for a kid
 export const useKidTodayTasks = (kidId: string) => {
-  const today = new Date().toISOString().split('T')[0];
-  
   return useQuery({
-    queryKey: ['kid-today-tasks', kidId, today],
+    queryKey: ['today-tasks', kidId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('daily_task')
-        .select(`
-          *,
-          task_template (
-            title,
-            icon_emoji,
-            base_points
-          )
-        `)
-        .eq('kid_id', kidId)
-        .eq('due_date', today)
-        .order('created_at', { ascending: true });
+      const { data, error } = await supabase.rpc('get_today_tasks' as any, {
+        p_kid_id: kidId,
+      });
       
       if (error) throw error;
-      return data as DailyTask[];
+      
+      // Transform RPC response to match expected UI shape
+      const rpcData = data as unknown as TodayTaskRpcResponse[];
+      const transformedData = rpcData.map(task => ({
+        id: task.daily_task_id,
+        kid_id: kidId,
+        task_template_id: '', // Not needed by UI
+        due_date: task.due_date,
+        status: task.status,
+        points_awarded: task.points_awarded,
+        task_template: {
+          title: task.title,
+          icon_emoji: task.icon_emoji,
+          base_points: task.base_points,
+        },
+      })) as DailyTask[];
+      
+      return transformedData;
     },
+    refetchOnWindowFocus: false,
   });
 };
 
@@ -155,11 +172,19 @@ export const useCompleteTask = () => {
       if (error) throw error;
       return data as number; // Returns updated points balance
     },
-    onSuccess: (_, dailyTaskId) => {
-      // Get the task to find the kid_id
-      queryClient.invalidateQueries({ queryKey: ['kid-today-tasks'] });
-      queryClient.invalidateQueries({ queryKey: ['kid-balance'] });
-      queryClient.invalidateQueries({ queryKey: ['kid-points-history'] });
+    onSuccess: (_, variables, context) => {
+      // We need the kidId to invalidate specific queries
+      // Extract kidId from the context or get it from current queries
+      const cachedQueries = queryClient.getQueriesData({ queryKey: ['today-tasks'] });
+      
+      cachedQueries.forEach(([queryKey]) => {
+        if (Array.isArray(queryKey) && queryKey[0] === 'today-tasks') {
+          const kidId = queryKey[1];
+          queryClient.invalidateQueries({ queryKey: ['today-tasks', kidId] });
+          queryClient.invalidateQueries({ queryKey: ['kid-balance', kidId] });
+          queryClient.invalidateQueries({ queryKey: ['kid-points-history', kidId] });
+        }
+      });
     },
   });
 };
