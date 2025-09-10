@@ -57,6 +57,13 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        kid: {
+          primary: "hsl(var(--kid-primary))",
+          secondary: "hsl(var(--kid-secondary))",
+          success: "hsl(var(--kid-success))",
+          warning: "hsl(var(--kid-warning))",
+          fun: "hsl(var(--kid-fun))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -80,10 +87,27 @@ export default {
             height: "0",
           },
         },
+        "bounce-in": {
+          "0%": { transform: "scale(0.3)", opacity: "0" },
+          "50%": { transform: "scale(1.05)" },
+          "70%": { transform: "scale(0.9)" },
+          "100%": { transform: "scale(1)", opacity: "1" },
+        },
+        "wiggle": {
+          "0%, 100%": { transform: "rotate(-3deg)" },
+          "50%": { transform: "rotate(3deg)" },
+        },
+        "pulse-big": {
+          "0%, 100%": { transform: "scale(1)" },
+          "50%": { transform: "scale(1.1)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "bounce-in": "bounce-in 0.6s ease-out",
+        "wiggle": "wiggle 1s ease-in-out infinite",
+        "pulse-big": "pulse-big 2s infinite",
       },
     },
   },
