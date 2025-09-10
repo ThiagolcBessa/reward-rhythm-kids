@@ -224,9 +224,11 @@ export const useGrantBonus = () => {
       if (error) throw error;
       return data as number; // Returns updated balance
     },
-    onSuccess: (_, { kidId }) => {
+    onSuccess: (_, { kidId, period }) => {
+      queryClient.invalidateQueries({ queryKey: ['today-tasks', kidId] });
       queryClient.invalidateQueries({ queryKey: ['kid-balance', kidId] });
       queryClient.invalidateQueries({ queryKey: ['kid-points-history', kidId] });
+      queryClient.invalidateQueries({ queryKey: ['bonus-eligibility', kidId, period] });
     },
   });
 };

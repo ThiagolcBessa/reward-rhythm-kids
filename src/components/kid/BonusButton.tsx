@@ -38,7 +38,7 @@ export const BonusButton: React.FC<BonusButtonProps> = ({ kidId, period }) => {
     }
   };
 
-  if (!eligibility?.eligible) {
+  if (!eligibility?.eligible || eligibility?.already_granted) {
     return null;
   }
 
@@ -55,22 +55,30 @@ export const BonusButton: React.FC<BonusButtonProps> = ({ kidId, period }) => {
         />
       )}
       
-      <Button
-        onClick={handleGrantBonus}
-        disabled={grantBonusMutation.isPending}
-        className="bg-gradient-to-r from-kid-fun to-kid-primary text-white font-bold py-4 px-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 animate-pulse-big"
-        size="lg"
-      >
-        <div className="flex items-center gap-2">
-          <Trophy className="h-6 w-6 text-yellow-300" />
-          <Sparkles className="h-5 w-5 text-yellow-300 animate-wiggle" />
-          <span>
-            Claim {period === 'daily' ? 'Daily' : 'Weekly'} Bonus! 
-            (+{eligibility.bonus_points} pts)
-          </span>
-          <Sparkles className="h-5 w-5 text-yellow-300 animate-wiggle" />
+      <div className="bg-gradient-to-r from-kid-fun to-kid-primary p-4 rounded-2xl text-white animate-fade-in">
+        <div className="text-center mb-3">
+          <p className="text-sm opacity-90">
+            Completed {eligibility.completed_tasks}/{eligibility.total_tasks} tasks {period === 'daily' ? 'today' : 'this week'}
+          </p>
         </div>
-      </Button>
+        
+        <Button
+          onClick={handleGrantBonus}
+          disabled={grantBonusMutation.isPending}
+          className="w-full bg-white/20 hover:bg-white/30 text-white font-bold py-4 px-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 animate-pulse-big border border-white/20"
+          size="lg"
+        >
+          <div className="flex items-center justify-center gap-2">
+            <Trophy className="h-6 w-6 text-yellow-300" />
+            <Sparkles className="h-5 w-5 text-yellow-300 animate-wiggle" />
+            <span>
+              Claim {period === 'daily' ? 'Daily' : 'Weekly'} Bonus! 
+              (+{eligibility.bonus_points} pts)
+            </span>
+            <Sparkles className="h-5 w-5 text-yellow-300 animate-wiggle" />
+          </div>
+        </Button>
+      </div>
     </>
   );
 };

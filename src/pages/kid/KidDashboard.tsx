@@ -52,12 +52,10 @@ const KidDashboard = () => {
         </div>
 
         {/* Bonus Buttons */}
-        {allTasksCompleted && (
-          <div className="space-y-3">
-            <BonusButton kidId={kidId!} period="daily" />
-            <BonusButton kidId={kidId!} period="weekly" />
-          </div>
-        )}
+        <div className="space-y-3">
+          <BonusButton kidId={kidId!} period="daily" />
+          <BonusButton kidId={kidId!} period="weekly" />
+        </div>
 
         {/* Progress Indicator */}
         {totalTasks > 0 && (
