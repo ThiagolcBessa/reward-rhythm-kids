@@ -168,7 +168,7 @@ const Login = () => {
     const { error } = await supabase.auth.signInWithOtp({
       email: magicLinkEmail,
       options: {
-        emailRedirectTo: `${window.location.origin}/parent`
+        emailRedirectTo: window.location.origin
       }
     });
 
@@ -180,16 +180,12 @@ const Login = () => {
       });
     } else {
       setMagicLinkSent(true);
-      toast({
-        title: "Magic link sent!",
-        description: "Check your email for the login link.",
-      });
     }
     
     setIsSubmittingMagicLink(false);
   };
 
-  if (magicLinkSent) {
+  if (magicLinkSent && !passwordFormMode) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-kid-primary/10 to-kid-secondary/10 p-4">
         <Card className="w-full max-w-md text-center">
@@ -442,33 +438,59 @@ const Login = () => {
             </TabsContent>
 
             <TabsContent value="magic" className="mt-6">
-              <form onSubmit={handleMagicLinkSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email-magic">Email address</Label>
-                  <Input
-                    id="email-magic"
-                    type="email"
-                    placeholder="your@email.com"
-                    value={magicLinkEmail}
-                    onChange={(e) => setMagicLinkEmail(e.target.value)}
-                    required
-                    aria-label="Email address for magic link authentication"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    We'll send you a secure link to sign in instantly
-                  </p>
+              {magicLinkSent ? (
+                // Success state
+                <div className="text-center space-y-4">
+                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-kid-success/20">
+                    <Mail className="h-6 w-6 text-kid-success" />
+                  </div>
+                  <div className="space-y-2">
+                    <h3 className="text-lg font-semibold text-kid-primary">Check your email</h3>
+                    <p className="text-sm text-muted-foreground">
+                      We sent you a login link. Check your email and click the link to sign in.
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Sent to: <strong>{magicLinkEmail}</strong>
+                    </p>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={() => setMagicLinkSent(false)}
+                  >
+                    Send another link
+                  </Button>
                 </div>
-                <Button 
-                  type="submit" 
-                  className="w-full" 
-                  disabled={isSubmittingMagicLink}
-                  aria-label="Send magic link to email"
-                >
-                  {isSubmittingMagicLink && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  <Mail className="mr-2 h-4 w-4" />
-                  Send Magic Link
-                </Button>
-              </form>
+              ) : (
+                // Magic link form
+                <form onSubmit={handleMagicLinkSubmit} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="email-magic">Email address</Label>
+                    <Input
+                      id="email-magic"
+                      type="email"
+                      placeholder="your@email.com"
+                      value={magicLinkEmail}
+                      onChange={(e) => setMagicLinkEmail(e.target.value)}
+                      required
+                      aria-label="Email address for magic link authentication"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      We'll send you a secure link to sign in instantly
+                    </p>
+                  </div>
+                  <Button 
+                    type="submit" 
+                    className="w-full" 
+                    disabled={isSubmittingMagicLink}
+                    aria-label="Send magic link to email"
+                  >
+                    {isSubmittingMagicLink && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    <Mail className="mr-2 h-4 w-4" />
+                    Send Magic Link
+                  </Button>
+                </form>
+              )}
             </TabsContent>
           </Tabs>
           
