@@ -333,6 +333,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_bonus_eligibility: {
+        Args: { p_kid_id: string; p_period: string }
+        Returns: Json
+      }
       complete_task: {
         Args: { p_daily_task_id: string }
         Returns: number
@@ -341,8 +345,16 @@ export type Database = {
         Args: { p_family_id: string; p_target_date?: string }
         Returns: number
       }
+      get_kid_balance: {
+        Args: { p_kid_id: string }
+        Returns: number
+      }
       get_kid_points: {
         Args: { p_kid_id: string }
+        Returns: number
+      }
+      grant_bonus: {
+        Args: { p_kid_id: string; p_period: string }
         Returns: number
       }
     }
