@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Navigate, Link } from 'react-router-dom';
+import { Navigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,11 +12,27 @@ import { supabase } from '@/integrations/supabase/client';
 
 const Login = () => {
   const { user, loading } = useAuth();
-  const [emailPassword, setEmailPassword] = useState({ email: '', password: '' });
+  const [searchParams] = useSearchParams();
+  const returnTo = searchParams.get('returnTo') || '/';
+  
+  // Sign in form state
+  const [signInForm, setSignInForm] = useState({ email: '', password: '' });
+  const [signInErrors, setSignInErrors] = useState({ email: '', password: '' });
+  const [isSigningIn, setIsSigningIn] = useState(false);
+  
+  // Sign up form state
+  const [signUpForm, setSignUpForm] = useState({ email: '', password: '', confirmPassword: '' });
+  const [signUpErrors, setSignUpErrors] = useState({ email: '', password: '', confirmPassword: '' });
+  const [isSigningUp, setIsSigningUp] = useState(false);
+  const [signUpSuccess, setSignUpSuccess] = useState(false);
+  
+  // Magic link state
   const [magicLinkEmail, setMagicLinkEmail] = useState('');
-  const [isSubmittingPassword, setIsSubmittingPassword] = useState(false);
   const [isSubmittingMagicLink, setIsSubmittingMagicLink] = useState(false);
   const [magicLinkSent, setMagicLinkSent] = useState(false);
+  
+  // Form toggle
+  const [passwordFormMode, setPasswordFormMode] = useState<'signin' | 'signup'>('signin');
 
   if (loading) {
     return (
@@ -30,34 +46,119 @@ const Login = () => {
     return <Navigate to="/parent" replace />;
   }
 
-  const handleEmailPasswordSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (emailPassword.password.length < 8) {
-      toast({
-        title: "Password too short",
-        description: "Password must be at least 8 characters long.",
-        variant: "destructive",
-      });
-      return;
+  const validateSignInForm = () => {
+    const errors = { email: '', password: '' };
+    let isValid = true;
+
+    if (!signInForm.email) {
+      errors.email = 'Email is required';
+      isValid = false;
+    } else if (!/\S+@\S+\.\S+/.test(signInForm.email)) {
+      errors.email = 'Please enter a valid email address';
+      isValid = false;
     }
 
-    setIsSubmittingPassword(true);
+    if (!signInForm.password) {
+      errors.password = 'Password is required';
+      isValid = false;
+    }
+
+    setSignInErrors(errors);
+    return isValid;
+  };
+
+  const validateSignUpForm = () => {
+    const errors = { email: '', password: '', confirmPassword: '' };
+    let isValid = true;
+
+    if (!signUpForm.email) {
+      errors.email = 'Email is required';
+      isValid = false;
+    } else if (!/\S+@\S+\.\S+/.test(signUpForm.email)) {
+      errors.email = 'Please enter a valid email address';
+      isValid = false;
+    }
+
+    if (!signUpForm.password) {
+      errors.password = 'Password is required';
+      isValid = false;
+    } else if (signUpForm.password.length < 8) {
+      errors.password = 'Password must be at least 8 characters long';
+      isValid = false;
+    }
+
+    if (!signUpForm.confirmPassword) {
+      errors.confirmPassword = 'Please confirm your password';
+      isValid = false;
+    } else if (signUpForm.password !== signUpForm.confirmPassword) {
+      errors.confirmPassword = 'Passwords do not match';
+      isValid = false;
+    }
+
+    setSignUpErrors(errors);
+    return isValid;
+  };
+
+  const handleSignInSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validateSignInForm()) return;
+
+    setIsSigningIn(true);
     
     const { error } = await supabase.auth.signInWithPassword({
-      email: emailPassword.email,
-      password: emailPassword.password,
+      email: signInForm.email,
+      password: signInForm.password,
     });
 
     if (error) {
       toast({
-        title: "Authentication failed",
+        title: "Sign in failed",
         description: error.message,
         variant: "destructive",
       });
+    } else {
+      // Redirect will happen automatically via auth state change
+      window.location.href = returnTo;
     }
     
-    setIsSubmittingPassword(false);
+    setIsSigningIn(false);
+  };
+
+  const handleSignUpSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validateSignUpForm()) return;
+
+    setIsSigningUp(true);
+    
+    const { data, error } = await supabase.auth.signUp({
+      email: signUpForm.email,
+      password: signUpForm.password,
+      options: {
+        emailRedirectTo: `${window.location.origin}${returnTo}`
+      }
+    });
+
+    if (error) {
+      toast({
+        title: "Sign up failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    } else if (data.user && !data.user.email_confirmed_at) {
+      // Email confirmation required
+      setSignUpSuccess(true);
+      toast({
+        title: "Check your email",
+        description: "We've sent you a confirmation link to complete your registration.",
+      });
+    } else {
+      // Auto sign in successful
+      window.location.href = returnTo;
+    }
+    
+    setIsSigningUp(false);
   };
 
   const handleMagicLinkSubmit = async (e: React.FormEvent) => {
@@ -117,6 +218,36 @@ const Login = () => {
     );
   }
 
+  if (signUpSuccess) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-kid-primary/10 to-kid-secondary/10 p-4">
+        <Card className="w-full max-w-md text-center">
+          <CardHeader>
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-kid-success/20">
+              <Mail className="h-6 w-6 text-kid-success" />
+            </div>
+            <CardTitle className="text-2xl font-bold text-kid-primary">Check your email</CardTitle>
+            <CardDescription>
+              We've sent a confirmation link to <strong>{signUpForm.email}</strong>
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Please check your email to confirm your account before signing in.
+            </p>
+            <Button 
+              variant="outline" 
+              className="w-full"
+              onClick={() => setSignUpSuccess(false)}
+            >
+              Back to Sign In
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-kid-primary/10 to-kid-secondary/10 p-4">
       <Card className="w-full max-w-md">
@@ -143,46 +274,171 @@ const Login = () => {
             </TabsList>
 
             <TabsContent value="password" className="mt-6">
-              <form onSubmit={handleEmailPasswordSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email-password">Email address</Label>
-                  <Input
-                    id="email-password"
-                    type="email"
-                    placeholder="your@email.com"
-                    value={emailPassword.email}
-                    onChange={(e) => setEmailPassword({ ...emailPassword, email: e.target.value })}
-                    required
-                    aria-label="Email address for login"
-                  />
+              <div className="space-y-4">
+                {/* Form Toggle */}
+                <div className="flex items-center justify-center space-x-4">
+                  <button
+                    type="button"
+                    onClick={() => setPasswordFormMode('signin')}
+                    className={`text-sm font-medium ${
+                      passwordFormMode === 'signin' 
+                        ? 'text-kid-primary border-b-2 border-kid-primary' 
+                        : 'text-muted-foreground hover:text-foreground'
+                    } pb-2`}
+                  >
+                    Sign In
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPasswordFormMode('signup')}
+                    className={`text-sm font-medium ${
+                      passwordFormMode === 'signup' 
+                        ? 'text-kid-primary border-b-2 border-kid-primary' 
+                        : 'text-muted-foreground hover:text-foreground'
+                    } pb-2`}
+                  >
+                    Sign Up
+                  </button>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="Enter your password"
-                    value={emailPassword.password}
-                    onChange={(e) => setEmailPassword({ ...emailPassword, password: e.target.value })}
-                    required
-                    minLength={8}
-                    aria-label="Password for login, minimum 8 characters"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Password must be at least 8 characters long
-                  </p>
-                </div>
-                <Button 
-                  type="submit" 
-                  className="w-full" 
-                  disabled={isSubmittingPassword}
-                  aria-label="Sign in with email and password"
-                >
-                  {isSubmittingPassword && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  <Lock className="mr-2 h-4 w-4" />
-                  Sign In
-                </Button>
-              </form>
+
+                {/* Sign In Form */}
+                {passwordFormMode === 'signin' && (
+                  <form onSubmit={handleSignInSubmit} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="signin-email">Email address</Label>
+                      <Input
+                        id="signin-email"
+                        type="email"
+                        placeholder="your@email.com"
+                        value={signInForm.email}
+                        onChange={(e) => {
+                          setSignInForm({ ...signInForm, email: e.target.value });
+                          if (signInErrors.email) setSignInErrors({ ...signInErrors, email: '' });
+                        }}
+                        required
+                        aria-label="Email address for sign in"
+                        className={signInErrors.email ? 'border-destructive' : ''}
+                      />
+                      {signInErrors.email && (
+                        <p className="text-xs text-destructive">{signInErrors.email}</p>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="signin-password">Password</Label>
+                      <Input
+                        id="signin-password"
+                        type="password"
+                        placeholder="Enter your password"
+                        value={signInForm.password}
+                        onChange={(e) => {
+                          setSignInForm({ ...signInForm, password: e.target.value });
+                          if (signInErrors.password) setSignInErrors({ ...signInErrors, password: '' });
+                        }}
+                        required
+                        aria-label="Password for sign in"
+                        className={signInErrors.password ? 'border-destructive' : ''}
+                      />
+                      {signInErrors.password && (
+                        <p className="text-xs text-destructive">{signInErrors.password}</p>
+                      )}
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <Link to="/reset-password" className="text-xs text-kid-primary hover:underline">
+                        Forgot password?
+                      </Link>
+                    </div>
+                    <Button 
+                      type="submit" 
+                      className="w-full" 
+                      disabled={isSigningIn}
+                      aria-label="Sign in with email and password"
+                    >
+                      {isSigningIn && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      <Lock className="mr-2 h-4 w-4" />
+                      Sign In
+                    </Button>
+                  </form>
+                )}
+
+                {/* Sign Up Form */}
+                {passwordFormMode === 'signup' && (
+                  <form onSubmit={handleSignUpSubmit} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-email">Email address</Label>
+                      <Input
+                        id="signup-email"
+                        type="email"
+                        placeholder="your@email.com"
+                        value={signUpForm.email}
+                        onChange={(e) => {
+                          setSignUpForm({ ...signUpForm, email: e.target.value });
+                          if (signUpErrors.email) setSignUpErrors({ ...signUpErrors, email: '' });
+                        }}
+                        required
+                        aria-label="Email address for sign up"
+                        className={signUpErrors.email ? 'border-destructive' : ''}
+                      />
+                      {signUpErrors.email && (
+                        <p className="text-xs text-destructive">{signUpErrors.email}</p>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-password">Password</Label>
+                      <Input
+                        id="signup-password"
+                        type="password"
+                        placeholder="Create a password"
+                        value={signUpForm.password}
+                        onChange={(e) => {
+                          setSignUpForm({ ...signUpForm, password: e.target.value });
+                          if (signUpErrors.password) setSignUpErrors({ ...signUpErrors, password: '' });
+                        }}
+                        required
+                        minLength={8}
+                        aria-label="Password for sign up, minimum 8 characters"
+                        className={signUpErrors.password ? 'border-destructive' : ''}
+                      />
+                      {signUpErrors.password && (
+                        <p className="text-xs text-destructive">{signUpErrors.password}</p>
+                      )}
+                      {!signUpErrors.password && (
+                        <p className="text-xs text-muted-foreground">
+                          Password must be at least 8 characters long
+                        </p>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-confirm-password">Confirm Password</Label>
+                      <Input
+                        id="signup-confirm-password"
+                        type="password"
+                        placeholder="Confirm your password"
+                        value={signUpForm.confirmPassword}
+                        onChange={(e) => {
+                          setSignUpForm({ ...signUpForm, confirmPassword: e.target.value });
+                          if (signUpErrors.confirmPassword) setSignUpErrors({ ...signUpErrors, confirmPassword: '' });
+                        }}
+                        required
+                        aria-label="Confirm password for sign up"
+                        className={signUpErrors.confirmPassword ? 'border-destructive' : ''}
+                      />
+                      {signUpErrors.confirmPassword && (
+                        <p className="text-xs text-destructive">{signUpErrors.confirmPassword}</p>
+                      )}
+                    </div>
+                    <Button 
+                      type="submit" 
+                      className="w-full" 
+                      disabled={isSigningUp}
+                      aria-label="Create account with email and password"
+                    >
+                      {isSigningUp && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      <Lock className="mr-2 h-4 w-4" />
+                      Create Account
+                    </Button>
+                  </form>
+                )}
+              </div>
             </TabsContent>
 
             <TabsContent value="magic" className="mt-6">
