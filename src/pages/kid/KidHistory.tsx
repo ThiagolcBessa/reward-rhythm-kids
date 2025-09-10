@@ -1,18 +1,18 @@
 import { useParams } from 'react-router-dom';
-import { History, TrendingUp, Trophy } from 'lucide-react';
+import { History, TrendingUp, Trophy, Coins } from 'lucide-react';
 import { KidHeader } from '@/components/kid/KidHeader';
 import { PointsHistoryCard } from '@/components/kid/PointsHistoryCard';
 import { NavigationButtons } from '@/components/kid/NavigationButtons';
 import { HistoryCardSkeleton, HeaderSkeleton } from '@/components/kid/LoadingSkeleton';
-import { useKidPointsHistory, useKidBalance } from '@/hooks/use-supabase-rpc';
+import { useKidPointsHistory, useKidBalance, useKidInfo } from '@/hooks/use-supabase-rpc';
 
 const KidHistory = () => {
   const { kidId } = useParams<{ kidId: string }>();
-  const { data: history, isLoading } = useKidPointsHistory(kidId!);
-  const { data: balance = 0 } = useKidBalance(kidId!);
+  const { data: history, isLoading: historyLoading } = useKidPointsHistory(kidId!);
+  const { data: balance = 0, isLoading: balanceLoading } = useKidBalance(kidId!);
+  const { data: kidInfo, isLoading: kidLoading } = useKidInfo(kidId!);
 
-  // Mock kid name - in real app, this would come from API
-  const kidName = "Alex";
+  const isLoading = historyLoading || kidLoading;
 
   if (isLoading) {
     return (
@@ -48,7 +48,7 @@ const KidHistory = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-kid-secondary/10 to-white pb-24">
-      <KidHeader kidName={kidName} />
+      <KidHeader kidName={kidInfo?.display_name || 'Loading...'} />
       
       <div className="p-4 max-w-md mx-auto space-y-6">
         {/* Header */}
@@ -78,10 +78,19 @@ const KidHistory = () => {
         </div>
 
         {/* Current Balance */}
-        <div className="bg-gradient-to-r from-kid-primary to-kid-fun text-white rounded-2xl p-4 text-center">
-          <h3 className="text-lg font-semibold mb-1">Current Balance</h3>
-          <p className="text-3xl font-bold">{balance} points</p>
-          <p className="text-sm opacity-80">Keep earning more!</p>
+        <div className="bg-gradient-to-r from-kid-primary via-kid-fun to-kid-secondary text-white rounded-2xl p-6 text-center shadow-lg border-2 border-white/20">
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <Coins className="h-6 w-6 text-yellow-300 animate-spin-slow" />
+            <h3 className="text-lg font-semibold">Current Balance</h3>
+          </div>
+          {balanceLoading ? (
+            <div className="animate-pulse">
+              <div className="h-8 w-20 bg-white/20 rounded mx-auto mb-2"></div>
+            </div>
+          ) : (
+            <p className="text-4xl font-bold mb-1 animate-scale-in">{balance} points</p>
+          )}
+          <p className="text-sm opacity-90">Keep earning more! 🌟</p>
         </div>
 
         {/* History List */}
@@ -101,15 +110,21 @@ const KidHistory = () => {
               </p>
             </div>
           ) : (
-            <div className="space-y-2">
-              {history.map((entry) => (
-                <PointsHistoryCard key={entry.id} entry={entry} />
+            <div className="space-y-2 max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-kid-primary scrollbar-track-gray-100">
+              {history.map((entry, index) => (
+                <div 
+                  key={entry.id} 
+                  className="animate-fade-in"
+                  style={{ animationDelay: `${index * 50}ms` }}
+                >
+                  <PointsHistoryCard entry={entry} />
+                </div>
               ))}
               
               {history.length >= 50 && (
                 <div className="text-center py-4">
-                  <p className="text-sm text-gray-500">
-                    Showing your latest 50 activities
+                  <p className="text-sm text-gray-500 bg-gray-50 rounded-xl p-3">
+                    📋 Showing your latest 50 activities
                   </p>
                 </div>
               )}

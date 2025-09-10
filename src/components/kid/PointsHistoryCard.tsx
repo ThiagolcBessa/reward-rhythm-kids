@@ -30,26 +30,38 @@ export const PointsHistoryCard: React.FC<PointsHistoryCardProps> = ({ entry }) =
   };
 
   return (
-    <Card className="p-4 hover:shadow-md transition-shadow duration-200">
+    <Card className={`p-4 hover:shadow-lg transition-all duration-200 border-l-4 ${
+      isBonus ? 'border-l-kid-fun bg-gradient-to-r from-kid-fun/5 to-transparent' :
+      isPositive ? 'border-l-kid-success bg-gradient-to-r from-kid-success/5 to-transparent' : 
+      'border-l-red-400 bg-gradient-to-r from-red-50 to-transparent'
+    }`}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3 flex-1">
-          {getIcon()}
+          <div className={`p-2 rounded-full ${
+            isBonus ? 'bg-kid-fun/20' :
+            isPositive ? 'bg-kid-success/20' : 'bg-red-100'
+          }`}>
+            {getIcon()}
+          </div>
           
           <div className="flex-1">
-            <p className="font-medium text-gray-800">
+            <p className="font-semibold text-gray-800 text-sm">
               {entry.description}
             </p>
-            <p className="text-sm text-gray-500">
+            <p className="text-xs text-gray-500 mt-1">
               {format(new Date(entry.created_at), 'MMM d, h:mm a')}
             </p>
           </div>
         </div>
 
         <div className="text-right">
-          {getPointsDisplay()}
-          <p className="text-xs text-gray-500 capitalize">
-            {entry.entry_type}
-            {isBonus && ' 🎉'}
+          <div className="flex items-center gap-1">
+            {getPointsDisplay()}
+            {isBonus && <span className="text-lg">🎉</span>}
+          </div>
+          <p className="text-xs text-gray-500 capitalize mt-1">
+            {entry.entry_type === 'bonus' ? 'Bonus' : 
+             entry.entry_type === 'credit' ? 'Earned' : 'Spent'}
           </p>
         </div>
       </div>
