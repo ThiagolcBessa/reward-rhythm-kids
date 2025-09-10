@@ -1,6 +1,6 @@
-import { format } from 'date-fns';
 import { TrendingUp, TrendingDown, Star } from 'lucide-react';
 import { Card } from '@/components/ui/card';
+import { formatPoints, getRelativeTime } from '@/lib/utils';
 import type { PointsLedgerEntry } from '@/hooks/use-supabase-rpc';
 
 interface PointsHistoryCardProps {
@@ -19,12 +19,11 @@ export const PointsHistoryCard: React.FC<PointsHistoryCardProps> = ({ entry }) =
   };
 
   const getPointsDisplay = () => {
-    const prefix = isPositive ? '+' : '-';
     const color = isBonus ? 'text-kid-fun' : isPositive ? 'text-kid-success' : 'text-red-500';
     
     return (
       <span className={`font-bold text-lg ${color}`}>
-        {prefix}{entry.points}
+        {formatPoints(entry.points, entry.entry_type)}
       </span>
     );
   };
@@ -49,7 +48,7 @@ export const PointsHistoryCard: React.FC<PointsHistoryCardProps> = ({ entry }) =
               {entry.description}
             </p>
             <p className="text-xs text-gray-500 mt-1">
-              {format(new Date(entry.created_at), 'MMM d, h:mm a')}
+              {getRelativeTime(entry.created_at)}
             </p>
           </div>
         </div>

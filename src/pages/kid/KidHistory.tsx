@@ -66,13 +66,17 @@ const KidHistory = () => {
         <div className="grid grid-cols-2 gap-3">
           <div className="bg-white rounded-2xl p-4 shadow-sm border text-center">
             <TrendingUp className="h-6 w-6 text-kid-success mx-auto mb-2" />
-            <p className="text-2xl font-bold text-kid-success">{totalEarned}</p>
+            <p className="text-2xl font-bold text-kid-success">
+              {new Intl.NumberFormat('en-US').format(totalEarned)}
+            </p>
             <p className="text-xs text-gray-500">Total Earned</p>
           </div>
           
           <div className="bg-white rounded-2xl p-4 shadow-sm border text-center">
             <Trophy className="h-6 w-6 text-kid-warning mx-auto mb-2" />
-            <p className="text-2xl font-bold text-kid-warning">{totalSpent}</p>
+            <p className="text-2xl font-bold text-kid-warning">
+              {new Intl.NumberFormat('en-US').format(totalSpent)}
+            </p>
             <p className="text-xs text-gray-500">Total Spent</p>
           </div>
         </div>
@@ -88,7 +92,9 @@ const KidHistory = () => {
               <div className="h-8 w-20 bg-white/20 rounded mx-auto mb-2"></div>
             </div>
           ) : (
-            <p className="text-4xl font-bold mb-1 animate-scale-in">{balance} points</p>
+            <p className="text-4xl font-bold mb-1 animate-scale-in">
+              {new Intl.NumberFormat('en-US').format(balance)} points
+            </p>
           )}
           <p className="text-sm opacity-90">Keep earning more! 🌟</p>
         </div>
@@ -100,14 +106,38 @@ const KidHistory = () => {
           </h3>
           
           {!history || history.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="text-6xl mb-4">📈</div>
-              <h3 className="text-xl font-bold text-gray-700 mb-2">
-                No history yet
+            <div className="text-center py-16 px-6">
+              {/* Animated Empty State Illustration */}
+              <div className="relative mb-8">
+                <div className="w-32 h-32 mx-auto mb-4 relative">
+                  {/* Chart background */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-kid-primary/10 to-kid-secondary/10 rounded-3xl border-2 border-dashed border-kid-primary/20 animate-pulse"></div>
+                  
+                  {/* Chart bars */}
+                  <div className="absolute inset-4 flex items-end justify-center gap-2">
+                    <div className="w-4 h-8 bg-gradient-to-t from-kid-success/30 to-kid-success/60 rounded-t animate-[fade-in_1s_ease-out_0.2s_both]"></div>
+                    <div className="w-4 h-12 bg-gradient-to-t from-kid-primary/30 to-kid-primary/60 rounded-t animate-[fade-in_1s_ease-out_0.4s_both]"></div>
+                    <div className="w-4 h-6 bg-gradient-to-t from-kid-fun/30 to-kid-fun/60 rounded-t animate-[fade-in_1s_ease-out_0.6s_both]"></div>
+                  </div>
+                  
+                  {/* Sparkle effects */}
+                  <div className="absolute -top-2 -right-2 text-2xl animate-bounce" style={{ animationDelay: '0.5s' }}>✨</div>
+                  <div className="absolute -bottom-2 -left-2 text-xl animate-bounce" style={{ animationDelay: '1s' }}>💫</div>
+                </div>
+              </div>
+              
+              <h3 className="text-2xl font-bold text-gray-700 mb-3">
+                Your adventure begins here! 🚀
               </h3>
-              <p className="text-gray-500">
-                Complete tasks to start earning points!
+              <p className="text-gray-500 text-lg mb-6">
+                Complete your first task to see your points history come to life!
               </p>
+              
+              <div className="bg-gradient-to-r from-kid-primary/10 to-kid-secondary/10 rounded-2xl p-4 border border-kid-primary/20">
+                <p className="text-sm text-gray-600">
+                  💡 <strong>Pro tip:</strong> Check out your tasks and start earning points to unlock rewards!
+                </p>
+              </div>
             </div>
           ) : (
             <div className="space-y-2 max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-kid-primary scrollbar-track-gray-100">
@@ -140,7 +170,7 @@ const KidHistory = () => {
               You're doing amazing!
             </h3>
             <p className="text-sm text-gray-700">
-              You've earned {totalEarned} points so far. Keep up the great work!
+              You've earned {new Intl.NumberFormat('en-US').format(totalEarned)} points so far. Keep up the great work!
             </p>
           </div>
         )}
