@@ -14,7 +14,320 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      completion: {
+        Row: {
+          completed_at: string
+          daily_task_id: string
+          id: string
+          kid_id: string
+        }
+        Insert: {
+          completed_at?: string
+          daily_task_id: string
+          id?: string
+          kid_id: string
+        }
+        Update: {
+          completed_at?: string
+          daily_task_id?: string
+          id?: string
+          kid_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "completion_daily_task_id_fkey"
+            columns: ["daily_task_id"]
+            isOneToOne: false
+            referencedRelation: "daily_task"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "completion_kid_id_fkey"
+            columns: ["kid_id"]
+            isOneToOne: false
+            referencedRelation: "kid"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      daily_task: {
+        Row: {
+          created_at: string | null
+          due_date: string
+          id: string
+          kid_id: string
+          points_awarded: number | null
+          status: string
+          task_template_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          due_date: string
+          id?: string
+          kid_id: string
+          points_awarded?: number | null
+          status?: string
+          task_template_id: string
+        }
+        Update: {
+          created_at?: string | null
+          due_date?: string
+          id?: string
+          kid_id?: string
+          points_awarded?: number | null
+          status?: string
+          task_template_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_task_kid_id_fkey"
+            columns: ["kid_id"]
+            isOneToOne: false
+            referencedRelation: "kid"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daily_task_task_template_id_fkey"
+            columns: ["task_template_id"]
+            isOneToOne: false
+            referencedRelation: "task_template"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      family: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          owner_uid: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+          owner_uid: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          owner_uid?: string
+        }
+        Relationships: []
+      }
+      kid: {
+        Row: {
+          age: number | null
+          avatar_url: string | null
+          color_hex: string | null
+          created_at: string | null
+          display_name: string
+          family_id: string
+          id: string
+        }
+        Insert: {
+          age?: number | null
+          avatar_url?: string | null
+          color_hex?: string | null
+          created_at?: string | null
+          display_name: string
+          family_id: string
+          id?: string
+        }
+        Update: {
+          age?: number | null
+          avatar_url?: string | null
+          color_hex?: string | null
+          created_at?: string | null
+          display_name?: string
+          family_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kid_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "family"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      points_ledger: {
+        Row: {
+          created_at: string | null
+          description: string
+          entry_type: Database["public"]["Enums"]["ledger_type"]
+          id: string
+          kid_id: string
+          points: number
+          ref_id: string | null
+          ref_table: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description: string
+          entry_type: Database["public"]["Enums"]["ledger_type"]
+          id?: string
+          kid_id: string
+          points: number
+          ref_id?: string | null
+          ref_table?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string
+          entry_type?: Database["public"]["Enums"]["ledger_type"]
+          id?: string
+          kid_id?: string
+          points?: number
+          ref_id?: string | null
+          ref_table?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "points_ledger_kid_id_fkey"
+            columns: ["kid_id"]
+            isOneToOne: false
+            referencedRelation: "kid"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      redemption: {
+        Row: {
+          decided_at: string | null
+          decided_by: string | null
+          id: string
+          kid_id: string
+          notes: string | null
+          requested_at: string | null
+          reward_id: string
+          status: Database["public"]["Enums"]["redemption_status"]
+        }
+        Insert: {
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          kid_id: string
+          notes?: string | null
+          requested_at?: string | null
+          reward_id: string
+          status?: Database["public"]["Enums"]["redemption_status"]
+        }
+        Update: {
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          kid_id?: string
+          notes?: string | null
+          requested_at?: string | null
+          reward_id?: string
+          status?: Database["public"]["Enums"]["redemption_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "redemption_kid_id_fkey"
+            columns: ["kid_id"]
+            isOneToOne: false
+            referencedRelation: "kid"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "redemption_reward_id_fkey"
+            columns: ["reward_id"]
+            isOneToOne: false
+            referencedRelation: "reward"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reward: {
+        Row: {
+          active: boolean
+          cost_points: number
+          created_at: string | null
+          description: string | null
+          family_id: string
+          icon_emoji: string | null
+          id: string
+          title: string
+        }
+        Insert: {
+          active?: boolean
+          cost_points: number
+          created_at?: string | null
+          description?: string | null
+          family_id: string
+          icon_emoji?: string | null
+          id?: string
+          title: string
+        }
+        Update: {
+          active?: boolean
+          cost_points?: number
+          created_at?: string | null
+          description?: string | null
+          family_id?: string
+          icon_emoji?: string | null
+          id?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reward_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "family"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      task_template: {
+        Row: {
+          active: boolean
+          base_points: number
+          created_at: string | null
+          description: string | null
+          family_id: string
+          icon_emoji: string | null
+          id: string
+          recurrence: Database["public"]["Enums"]["recurrence"]
+          title: string
+        }
+        Insert: {
+          active?: boolean
+          base_points: number
+          created_at?: string | null
+          description?: string | null
+          family_id: string
+          icon_emoji?: string | null
+          id?: string
+          recurrence?: Database["public"]["Enums"]["recurrence"]
+          title: string
+        }
+        Update: {
+          active?: boolean
+          base_points?: number
+          created_at?: string | null
+          description?: string | null
+          family_id?: string
+          icon_emoji?: string | null
+          id?: string
+          recurrence?: Database["public"]["Enums"]["recurrence"]
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_template_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "family"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +336,9 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      ledger_type: "credit" | "debit" | "bonus"
+      recurrence: "daily" | "weekly" | "once"
+      redemption_status: "pending" | "approved" | "rejected" | "delivered"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +465,10 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      ledger_type: ["credit", "debit", "bonus"],
+      recurrence: ["daily", "weekly", "once"],
+      redemption_status: ["pending", "approved", "rejected", "delivered"],
+    },
   },
 } as const
