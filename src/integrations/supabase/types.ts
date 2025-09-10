@@ -333,7 +333,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      complete_task: {
+        Args: { p_daily_task_id: string }
+        Returns: number
+      }
+      generate_today_tasks: {
+        Args: { p_family_id: string; p_target_date?: string }
+        Returns: number
+      }
+      get_kid_points: {
+        Args: { p_kid_id: string }
+        Returns: number
+      }
     }
     Enums: {
       ledger_type: "credit" | "debit" | "bonus"
