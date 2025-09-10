@@ -104,6 +104,38 @@ export const useFamily = () => {
   });
 };
 
+// Hook to get kids from authenticated user's family (for landing page)
+export const useMyKids = () => {
+  const { user } = useAuth();
+  
+  return useQuery({
+    queryKey: ['my-kids', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      
+      // First get the user's family
+      const { data: family, error: familyError } = await supabase
+        .from('family')
+        .select('id')
+        .eq('owner_uid', user.id)
+        .single();
+      
+      if (familyError || !family) return [];
+      
+      // Then get kids from that family
+      const { data, error } = await supabase
+        .from('kid')
+        .select('*')
+        .eq('family_id', family.id)
+        .order('created_at', { ascending: true });
+      
+      if (error) throw error;
+      return data as Kid[];
+    },
+    enabled: !!user,
+  });
+};
+
 // Hook to get kids
 export const useKids = () => {
   const { data: family } = useFamily();
