@@ -10,6 +10,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Edit2, Trash2, Users } from 'lucide-react';
 import { Kid } from '@/hooks/use-parent-data';
+import { AvatarUploader } from '@/components/ui/AvatarUploader';
 
 interface KidFormProps {
   kid?: Kid;
@@ -112,15 +113,14 @@ const KidForm = ({ kid, onClose }: KidFormProps) => {
         />
       </div>
       
-      <div className="space-y-2">
-        <Label htmlFor="avatar">Avatar URL (optional)</Label>
-        <Input
-          id="avatar"
-          type="url"
-          value={formData.avatar_url}
-          onChange={(e) => setFormData(prev => ({ ...prev, avatar_url: e.target.value }))}
-        />
-      </div>
+      <AvatarUploader
+        currentAvatarUrl={formData.avatar_url}
+        kidId={kid?.id}
+        familyId={family?.id}
+        kidName={formData.display_name}
+        colorHex={formData.color_hex}
+        onAvatarChange={(avatarUrl) => setFormData(prev => ({ ...prev, avatar_url: avatarUrl }))}
+      />
       
       <div className="space-y-2">
         <Label>Color Theme</Label>
