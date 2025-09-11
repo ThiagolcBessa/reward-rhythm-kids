@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useMutationWithToasts } from '@/hooks/use-mutation-toasts';
 
 // Hook to get kid information
 export const useKidInfo = (kidId: string) => {
@@ -231,21 +232,27 @@ export const useCompleteTaskForDate = () => {
 export const useRedeemReward = () => {
   const queryClient = useQueryClient();
   
-  return useMutation({
-    mutationFn: async ({ kidId, rewardId }: { kidId: string; rewardId: string }) => {
+  return useMutationWithToasts(
+    async ({ kidId, rewardId }: { kidId: string; rewardId: string }) => {
       const { data, error } = await supabase.rpc('redeem_reward', {
         p_kid_id: kidId,
         p_reward_id: rewardId,
       });
       
       if (error) throw error;
-      return data;
+      return { data, kidId };
     },
-    onSuccess: (_, { kidId }) => {
-      queryClient.invalidateQueries({ queryKey: ['kid-balance', kidId] });
-      queryClient.invalidateQueries({ queryKey: ['kid-points-history', kidId] });
-    },
-  });
+    {
+      success: { title: "Request sent", description: "Waiting for approval" },
+      error: { title: "Could not request reward" },
+      invalidate: [], // Will be handled via additional mutation options
+      onSuccessExtra: (result) => {
+        // Manual invalidation with kidId from result
+        queryClient.invalidateQueries({ queryKey: ['kid-balance', result.kidId] });
+        queryClient.invalidateQueries({ queryKey: ['kid-redemptions', result.kidId] });
+      }
+    }
+  );
 };
 
 // Mutation to grant bonus

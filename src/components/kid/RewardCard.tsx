@@ -27,21 +27,7 @@ export const RewardCard: React.FC<RewardCardProps> = ({ reward, kidId }) => {
       return;
     }
 
-    try {
-      await redeemMutation.mutateAsync({ kidId, rewardId: reward.id });
-      
-      toast({
-        title: "🎁 Reward requested!",
-        description: `Your ${reward.title} request has been sent to your parent!`,
-        duration: 4000,
-      });
-    } catch (error) {
-      toast({
-        title: "Oops!",
-        description: error instanceof Error ? error.message : "Something went wrong. Please try again!",
-        variant: "destructive",
-      });
-    }
+    await redeemMutation.mutateAsync({ kidId, rewardId: reward.id });
   };
 
   return (
