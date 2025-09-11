@@ -1,4 +1,3 @@
-import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -6,7 +5,6 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute, PublicRoute } from "@/components/ProtectedRoute";
 import { RedirectAuthToLogin } from "@/components/RedirectAuthToLogin";
-import { ToastBridge } from "@/components/ToastBridge";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import ResetPassword from "./pages/ResetPassword";
@@ -22,9 +20,6 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <Toaster />
-    <ToastBridge />
-    <Sonner />
     <TooltipProvider>
       <AuthProvider>
         <BrowserRouter>
@@ -48,6 +43,7 @@ const App = () => (
         </BrowserRouter>
       </AuthProvider>
     </TooltipProvider>
+    <Sonner />
   </QueryClientProvider>
 );
 
