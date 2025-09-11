@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { notifySuccess, notifyError, pgFriendlyMessage } from '@/lib/notify';
+import { useMutationWithToasts } from '@/hooks/use-mutation-toasts';
 import { useFamily } from '@/hooks/use-parent-data';
 
 export interface Assignment {
@@ -90,11 +90,10 @@ export const useAssignments = () => {
 
 // Hook to create assignment
 export const useCreateAssignment = () => {
-  const queryClient = useQueryClient();
   const { data: family } = useFamily();
   
-  return useMutation({
-    mutationFn: async (assignmentData: CreateAssignmentData) => {
+  return useMutationWithToasts(
+    async (assignmentData: CreateAssignmentData) => {
       const { data, error } = await supabase
         .from('kid_task_assignment' as any)
         .insert(assignmentData as any)
@@ -104,33 +103,27 @@ export const useCreateAssignment = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
-      if (family?.id) {
-        queryClient.invalidateQueries({ queryKey: ['assignments-list', family.id] });
+    {
+      success: { title: "Assignment saved" },
+      error: { title: "Could not save assignment" },
+      invalidate: family?.id ? [['assignments-list', family.id]] : [],
+      onErrorExtra: (error: any) => {
+        // Handle unique constraint violation (duplicate assignment)
+        if (error.code === '23505') {
+          // Emit custom event to focus the Task Template field
+          window.dispatchEvent(new CustomEvent('focus-task-template'));
+        }
       }
-      notifySuccess("Assignment created!", "Task has been assigned successfully.");
-    },
-    onError: (error: any) => {
-      // Handle unique constraint violation (duplicate assignment)
-      if (error.code === '23505') {
-        notifyError("Assignment already exists", "This task is already assigned to this kid.");
-        // Emit custom event to focus the Task Template field
-        window.dispatchEvent(new CustomEvent('focus-task-template'));
-        return;
-      }
-      
-      notifyError("Error creating assignment", pgFriendlyMessage(error));
-    },
-  });
+    }
+  );
 };
 
 // Hook to update assignment
 export const useUpdateAssignment = () => {
-  const queryClient = useQueryClient();
   const { data: family } = useFamily();
   
-  return useMutation({
-    mutationFn: async ({ id, ...updateData }: UpdateAssignmentData) => {
+  return useMutationWithToasts(
+    async ({ id, ...updateData }: UpdateAssignmentData) => {
       const { data, error } = await supabase
         .from('kid_task_assignment' as any)
         .update(updateData as any)
@@ -141,34 +134,27 @@ export const useUpdateAssignment = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
-      if (family?.id) {
-        queryClient.invalidateQueries({ queryKey: ['assignments-list', family.id] });
+    {
+      success: { title: "Assignment saved" },
+      error: { title: "Could not save assignment" },
+      invalidate: family?.id ? [['assignments-list', family.id]] : [],
+      onErrorExtra: (error: any) => {
+        // Handle unique constraint violation (duplicate assignment)
+        if (error.code === '23505') {
+          // Emit custom event to focus the Task Template field
+          window.dispatchEvent(new CustomEvent('focus-task-template'));
+        }
       }
-      notifySuccess("Assignment updated!", "Changes have been saved successfully.");
-    },
-    onError: (error: any) => {
-      // Handle unique constraint violation (duplicate assignment)
-      if (error.code === '23505') {
-        notifyError("Assignment already exists", "This task is already assigned to this kid.");
-        // Emit custom event to focus the Task Template field
-        window.dispatchEvent(new CustomEvent('focus-task-template'));
-        return;
-      }
-      
-      notifyError("Error updating assignment", pgFriendlyMessage(error));
-    },
-  });
+    }
+  );
 };
 
 // Hook to delete assignment
 export const useDeleteAssignment = () => {
-  const queryClient = useQueryClient();
-  
   const { data: family } = useFamily();
   
-  return useMutation({
-    mutationFn: async (assignmentId: string) => {
+  return useMutationWithToasts(
+    async (assignmentId: string) => {
       const { error } = await supabase
         .from('kid_task_assignment' as any)
         .delete()
@@ -176,14 +162,10 @@ export const useDeleteAssignment = () => {
       
       if (error) throw error;
     },
-    onSuccess: () => {
-      if (family?.id) {
-        queryClient.invalidateQueries({ queryKey: ['assignments-list', family.id] });
-      }
-      notifySuccess("Assignment deleted", "Task assignment has been removed.");
-    },
-    onError: (error: any) => {
-      notifyError("Error deleting assignment", pgFriendlyMessage(error));
-    },
-  });
+    {
+      success: { title: "Assignment removed" },
+      error: { title: "Could not remove assignment" },
+      invalidate: family?.id ? [['assignments-list', family.id]] : []
+    }
+  );
 };
