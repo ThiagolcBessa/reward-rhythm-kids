@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/use-auth';
+import { useMutationWithToasts } from '@/hooks/use-mutation-toasts';
 import { notifySuccess, notifyError, pgFriendlyMessage } from '@/lib/notify';
 
 // Types for parent dashboard
@@ -290,13 +291,14 @@ export const useTemplatesForFamily = () => {
 
 // Mutation to decide redemption
 export const useDecideRedemption = () => {
+  const { data: family } = useFamily();
   const queryClient = useQueryClient();
   
-  
   return useMutation({
-    mutationFn: async ({ redemptionId, decision }: { 
+    mutationFn: async ({ redemptionId, decision, kidId }: { 
       redemptionId: string; 
-      decision: 'approved' | 'rejected' | 'delivered' 
+      decision: 'approved' | 'rejected' | 'delivered';
+      kidId?: string; // Optional for invalidation
     }) => {
       const { data, error } = await supabase.rpc('decide_redemption', {
         p_redemption_id: redemptionId,
@@ -304,22 +306,31 @@ export const useDecideRedemption = () => {
       });
       
       if (error) throw error;
-      return data;
+      return { data, decision, kidId };
     },
-    onSuccess: (_, { decision }) => {
-      queryClient.invalidateQueries({ queryKey: ['redemptions'] });
-      queryClient.invalidateQueries({ queryKey: ['kids'] });
+    onSuccess: (result, variables) => {
+      const { decision } = result;
       
+      // Invalidate queries
+      if (family?.id) {
+        queryClient.invalidateQueries({ queryKey: ['redemptions', family.id] });
+      }
+      if (variables.kidId) {
+        queryClient.invalidateQueries({ queryKey: ['kid-balance', variables.kidId] });
+        queryClient.invalidateQueries({ queryKey: ['kid-redemptions', variables.kidId] });
+      }
+      
+      // Show success messages
       const messages = {
-        approved: "Reward approved! 🎉",
-        rejected: "Redemption rejected",
-        delivered: "Reward marked as delivered! ✅"
+        approved: "Redemption approved",
+        rejected: "Redemption rejected", 
+        delivered: "Delivered"
       };
       
       notifySuccess(messages[decision], decision === 'approved' ? "Points have been deducted" : "");
     },
     onError: (error: any) => {
-      notifyError("Error processing redemption", pgFriendlyMessage(error));
+      notifyError("Action failed", pgFriendlyMessage(error));
     },
   });
 };

@@ -8,48 +8,34 @@ import { format } from 'date-fns';
 import { Check, X, Package, Star, Clock, Gift, AlertCircle, Loader2 } from 'lucide-react';
 import ReactConfetti from 'react-confetti';
 import { useState } from 'react';
-import { useToast } from '@/hooks/use-toast';
 
 const RedemptionsTab = () => {
   const { data: redemptions, isLoading } = useRedemptions();
   const decideRedemption = useDecideRedemption();
   const [showConfetti, setShowConfetti] = useState(false);
   const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>({});
-  const { toast } = useToast();
   
   const handleDecision = async (redemptionId: string, decision: 'approved' | 'rejected' | 'delivered') => {
     setLoadingStates(prev => ({ ...prev, [redemptionId]: true }));
     
     try {
-      const result = await decideRedemption.mutateAsync({ redemptionId, decision });
+      // Find the redemption to get kidId for proper cache invalidation
+      const redemption = redemptions?.find(r => r.id === redemptionId);
+      const kidId = redemption?.kid_id;
       
+      await decideRedemption.mutateAsync({ 
+        redemptionId, 
+        decision,
+        kidId // Pass kidId for cache invalidation
+      });
+      
+      // Show confetti only for approvals
       if (decision === 'approved') {
         setShowConfetti(true);
         setTimeout(() => setShowConfetti(false), 3000);
-        
-        // Enhanced success toast with balance info
-        const redemption = redemptions?.find(r => r.id === redemptionId);
-        if (redemption && result && typeof result === 'object' && 'kid_current_balance' in result) {
-          const typedResult = result as { kid_current_balance: number };
-          toast({
-            title: "🎉 Reward Approved!",
-            description: `${redemption.kid.display_name}'s new balance: ${typedResult.kid_current_balance} points`,
-          });
-        }
-      } else if (decision === 'rejected') {
-        toast({
-          title: "Redemption Rejected",
-          description: "The reward request has been declined.",
-          variant: "default"
-        });
-      } else if (decision === 'delivered') {
-        toast({
-          title: "✅ Reward Delivered",
-          description: "The reward has been marked as delivered successfully.",
-        });
       }
     } catch (error) {
-      // Error is handled by the mutation hook's onError
+      // Error is handled by the mutation wrapper
     } finally {
       setLoadingStates(prev => ({ ...prev, [redemptionId]: false }));
     }
