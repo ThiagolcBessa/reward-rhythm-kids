@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { showToast } from '@/lib/toast-bus';
+import { notifySuccess, notifyError, pgFriendlyMessage } from '@/lib/notify';
 
 interface AuthContextType {
   user: User | null;
@@ -83,21 +83,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       if (error) {
         console.error('Sign in error:', error);
-        showToast({
-          title: "Sign in failed",
-          description: error.message,
-          variant: "destructive",
-        });
+        notifyError("Sign in failed", pgFriendlyMessage(error));
       }
       
       return { error };
     } catch (networkError) {
       console.error('Network error during sign in:', networkError);
-      showToast({
-        title: "Connection failed",
-        description: "Unable to connect to authentication service. Please check your internet connection.",
-        variant: "destructive",
-      });
+      notifyError("Connection failed", "Unable to connect to authentication service. Please check your internet connection.");
       return { error: networkError };
     }
   };
@@ -113,16 +105,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     });
     
     if (error) {
-      showToast({
-        title: "Magic link failed",
-        description: error.message,
-        variant: "destructive",
-      });
+      notifyError("Magic link failed", pgFriendlyMessage(error));
     } else {
-      showToast({
-        title: "Check your email",
-        description: "We've sent you a magic link to sign in.",
-      });
+      notifySuccess("Check your email", "We've sent you a magic link to sign in.");
     }
     
     return { error };
@@ -140,16 +125,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     });
     
     if (error) {
-      showToast({
-        title: "Sign up failed",
-        description: error.message,
-        variant: "destructive",
-      });
+      notifyError("Sign up failed", pgFriendlyMessage(error));
     } else {
-      showToast({
-        title: "Check your email",
-        description: "We've sent you a confirmation link to complete your sign up.",
-      });
+      notifySuccess("Check your email", "We've sent you a confirmation link to complete your sign up.");
     }
     
     return { error };
@@ -157,10 +135,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signOut = async () => {
     await supabase.auth.signOut();
-    showToast({
-      title: "Signed out",
-      description: "You have been signed out successfully.",
-    });
+    notifySuccess("Signed out", "You have been signed out successfully.");
   };
 
   // Don't render children until auth is initialized

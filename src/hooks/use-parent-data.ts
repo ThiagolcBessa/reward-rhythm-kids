@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/use-auth';
-import { showToast } from '@/lib/toast-bus';
+import { notifySuccess, notifyError, pgFriendlyMessage } from '@/lib/notify';
 
 // Types for parent dashboard
 export interface Family {
@@ -235,17 +235,10 @@ export const useGenerateTodayTasks = () => {
     },
     onSuccess: (taskCount) => {
       queryClient.invalidateQueries({ queryKey: ['kids'] });
-      showToast({
-        title: "Tasks generated!",
-        description: `Generated ${taskCount} tasks for today.`,
-      });
+      notifySuccess("Tasks generated!", `Generated ${taskCount} tasks for today.`);
     },
     onError: (error: any) => {
-      showToast({
-        title: "Error generating tasks",
-        description: error.message,
-        variant: "destructive",
-      });
+      notifyError("Error generating tasks", pgFriendlyMessage(error));
     },
   });
 };
@@ -323,17 +316,10 @@ export const useDecideRedemption = () => {
         delivered: "Reward marked as delivered! ✅"
       };
       
-      showToast({
-        title: messages[decision],
-        description: decision === 'approved' ? "Points have been deducted" : "",
-      });
+      notifySuccess(messages[decision], decision === 'approved' ? "Points have been deducted" : "");
     },
     onError: (error: any) => {
-      showToast({
-        title: "Error processing redemption",
-        description: error.message,
-        variant: "destructive",
-      });
+      notifyError("Error processing redemption", pgFriendlyMessage(error));
     },
   });
 };

@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { showToast } from '@/lib/toast-bus';
+import { notifySuccess, notifyError, pgFriendlyMessage } from '@/lib/notify';
 import { useFamily } from '@/hooks/use-parent-data';
 
 export interface Assignment {
@@ -108,29 +108,18 @@ export const useCreateAssignment = () => {
       if (family?.id) {
         queryClient.invalidateQueries({ queryKey: ['assignments-list', family.id] });
       }
-      showToast({
-        title: "Assignment created!",
-        description: "Task has been assigned successfully.",
-      });
+      notifySuccess("Assignment created!", "Task has been assigned successfully.");
     },
     onError: (error: any) => {
       // Handle unique constraint violation (duplicate assignment)
       if (error.code === '23505') {
-        showToast({
-          title: "Assignment already exists",
-          description: "This task is already assigned to this kid.",
-          variant: "destructive",
-        });
+        notifyError("Assignment already exists", "This task is already assigned to this kid.");
         // Emit custom event to focus the Task Template field
         window.dispatchEvent(new CustomEvent('focus-task-template'));
         return;
       }
       
-      showToast({
-        title: "Error creating assignment",
-        description: error.message,
-        variant: "destructive",
-      });
+      notifyError("Error creating assignment", pgFriendlyMessage(error));
     },
   });
 };
@@ -156,29 +145,18 @@ export const useUpdateAssignment = () => {
       if (family?.id) {
         queryClient.invalidateQueries({ queryKey: ['assignments-list', family.id] });
       }
-      showToast({
-        title: "Assignment updated!",
-        description: "Changes have been saved successfully.",
-      });
+      notifySuccess("Assignment updated!", "Changes have been saved successfully.");
     },
     onError: (error: any) => {
       // Handle unique constraint violation (duplicate assignment)
       if (error.code === '23505') {
-        showToast({
-          title: "Assignment already exists",
-          description: "This task is already assigned to this kid.",
-          variant: "destructive",
-        });
+        notifyError("Assignment already exists", "This task is already assigned to this kid.");
         // Emit custom event to focus the Task Template field
         window.dispatchEvent(new CustomEvent('focus-task-template'));
         return;
       }
       
-      showToast({
-        title: "Error updating assignment",
-        description: error.message,
-        variant: "destructive",
-      });
+      notifyError("Error updating assignment", pgFriendlyMessage(error));
     },
   });
 };
@@ -202,17 +180,10 @@ export const useDeleteAssignment = () => {
       if (family?.id) {
         queryClient.invalidateQueries({ queryKey: ['assignments-list', family.id] });
       }
-      showToast({
-        title: "Assignment deleted",
-        description: "Task assignment has been removed.",
-      });
+      notifySuccess("Assignment deleted", "Task assignment has been removed.");
     },
     onError: (error: any) => {
-      showToast({
-        title: "Error deleting assignment",
-        description: error.message,
-        variant: "destructive",
-      });
+      notifyError("Error deleting assignment", pgFriendlyMessage(error));
     },
   });
 };
