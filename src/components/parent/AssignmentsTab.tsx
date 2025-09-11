@@ -251,11 +251,11 @@ const AssignmentForm = ({ assignment, onClose }: AssignmentFormProps) => {
       <div className="space-y-2">
         <Label>Base Points Override</Label>
         <Select
-          value={formData.base_points_override?.toString() || ''}
+          value={formData.base_points_override?.toString() || 'default'}
           onValueChange={(value) => 
             setFormData(prev => ({ 
               ...prev, 
-              base_points_override: value ? parseInt(value) : null 
+              base_points_override: value === "default" ? null : parseInt(value) 
             }))
           }
         >
@@ -263,7 +263,7 @@ const AssignmentForm = ({ assignment, onClose }: AssignmentFormProps) => {
             <SelectValue placeholder="Use template default" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Use template default</SelectItem>
+            <SelectItem value="default">Use template default</SelectItem>
             <SelectItem value="5">5 points</SelectItem>
             <SelectItem value="10">10 points</SelectItem>
             <SelectItem value="15">15 points</SelectItem>
