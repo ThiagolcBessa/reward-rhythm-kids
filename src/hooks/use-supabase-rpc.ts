@@ -171,6 +171,32 @@ export const useKidPointsHistory = (kidId: string) => {
   });
 };
 
+// Hook to get kid's tasks calendar for a date range
+export const useKidTasksCalendar = (kidId: string, startDate: string, endDate: string) => {
+  return useQuery({
+    queryKey: ['tasks-calendar', kidId, startDate, endDate],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_tasks_calendar' as any, {
+        p_kid_id: kidId,
+        p_start: startDate,
+        p_end: endDate,
+      });
+      
+      if (error) throw error;
+      
+      return data as Array<{
+        due_date: string;
+        task_template_id: string;
+        title: string;
+        icon_emoji: string;
+        base_points: number;
+        status: string;
+      }>;
+    },
+    refetchOnWindowFocus: false,
+  });
+};
+
 // Mutation to complete a task using complete_task_for_date
 export const useCompleteTaskForDate = () => {
   const queryClient = useQueryClient();

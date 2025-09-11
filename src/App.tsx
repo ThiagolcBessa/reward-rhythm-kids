@@ -13,6 +13,7 @@ import UpdatePassword from "./pages/UpdatePassword";
 import ParentDashboard from "./pages/ParentDashboard";
 import NotFound from "./pages/NotFound";
 import KidDashboard from "./pages/kid/KidDashboard";
+import KidCalendar from "./pages/kid/KidCalendar";
 import KidRewards from "./pages/kid/KidRewards";
 import KidHistory from "./pages/kid/KidHistory";
 
@@ -35,6 +36,7 @@ const App = () => (
             
             {/* Kid Experience Routes - Protected */}
             <Route path="/kid/:kidId" element={<ProtectedRoute><KidDashboard /></ProtectedRoute>} />
+            <Route path="/kid/:kidId/calendar" element={<ProtectedRoute><KidCalendar /></ProtectedRoute>} />
             <Route path="/kid/:kidId/rewards" element={<ProtectedRoute><KidRewards /></ProtectedRoute>} />
             <Route path="/kid/:kidId/history" element={<ProtectedRoute><KidHistory /></ProtectedRoute>} />
             

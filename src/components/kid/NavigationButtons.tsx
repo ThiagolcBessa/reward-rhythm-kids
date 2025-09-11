@@ -1,9 +1,9 @@
 import { useNavigate, useParams } from 'react-router-dom';
-import { Gift, History, Home } from 'lucide-react';
+import { Gift, History, Home, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface NavigationButtonsProps {
-  currentPage?: 'dashboard' | 'rewards' | 'history';
+  currentPage?: 'dashboard' | 'calendar' | 'rewards' | 'history';
 }
 
 export const NavigationButtons: React.FC<NavigationButtonsProps> = ({ currentPage = 'dashboard' }) => {
@@ -17,6 +17,13 @@ export const NavigationButtons: React.FC<NavigationButtonsProps> = ({ currentPag
       icon: Home,
       path: `/kid/${kidId}`,
       color: 'bg-kid-primary',
+    },
+    {
+      key: 'calendar',
+      label: 'Calendar',
+      icon: Calendar,
+      path: `/kid/${kidId}/calendar`,
+      color: 'bg-kid-fun',
     },
     {
       key: 'rewards',

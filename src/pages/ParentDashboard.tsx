@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import OverviewTab from '@/components/parent/OverviewTab';
 import TaskTemplatesTab from '@/components/parent/TaskTemplatesTab';
 import AssignmentsTab from '@/components/parent/AssignmentsTab';
+import CalendarTab from '@/components/parent/CalendarTab';
 import RewardsTab from '@/components/parent/RewardsTab';
 import RedemptionsTab from '@/components/parent/RedemptionsTab';
 import KidsTab from '@/components/parent/KidsTab';
@@ -16,6 +17,7 @@ import {
   BarChart3, 
   CheckSquare, 
   ClipboardList,
+  Calendar,
   Gift, 
   Package, 
   Users, 
@@ -94,7 +96,7 @@ const ParentDashboard = () => {
         </div>
         
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 md:grid-cols-7 mb-8">
+          <TabsList className="grid w-full grid-cols-4 md:grid-cols-8 mb-8">
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
               <span className="hidden sm:inline">Overview</span>
@@ -106,6 +108,10 @@ const ParentDashboard = () => {
             <TabsTrigger value="assignments" className="flex items-center gap-2">
               <ClipboardList className="h-4 w-4" />
               <span className="hidden sm:inline">Assignments</span>
+            </TabsTrigger>
+            <TabsTrigger value="calendar" className="flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              <span className="hidden sm:inline">Calendar</span>
             </TabsTrigger>
             <TabsTrigger value="rewards" className="flex items-center gap-2">
               <Gift className="h-4 w-4" />
@@ -135,6 +141,10 @@ const ParentDashboard = () => {
           
           <TabsContent value="assignments">
             <AssignmentsTab />
+          </TabsContent>
+          
+          <TabsContent value="calendar">
+            <CalendarTab />
           </TabsContent>
           
           <TabsContent value="rewards">
