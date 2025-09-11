@@ -14,17 +14,17 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { useAssignments, useCreateAssignment, useUpdateAssignment, useDeleteAssignment, Assignment, CreateAssignmentData } from '@/hooks/use-assignments';
 import { useKids, useTaskTemplates, useKidsForFamily, useTemplatesForFamily } from '@/hooks/use-parent-data';
-import { Plus, Edit2, Trash2, CalendarIcon } from 'lucide-react';
+import { Plus, Edit2, Trash2, CalendarIcon, ChevronDown, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const DAYS_OF_WEEK = [
-  { value: 'mon', label: 'Mon' },
-  { value: 'tue', label: 'Tue' },
-  { value: 'wed', label: 'Wed' },
-  { value: 'thu', label: 'Thu' },
-  { value: 'fri', label: 'Fri' },
-  { value: 'sat', label: 'Sat' },
-  { value: 'sun', label: 'Sun' },
+  { value: 'mon', label: 'Monday' },
+  { value: 'tue', label: 'Tuesday' },
+  { value: 'wed', label: 'Wednesday' },
+  { value: 'thu', label: 'Thursday' },
+  { value: 'fri', label: 'Friday' },
+  { value: 'sat', label: 'Saturday' },
+  { value: 'sun', label: 'Sunday' },
 ];
 
 interface AssignmentFormProps {
@@ -51,6 +51,11 @@ const AssignmentForm = ({ assignment, onClose }: AssignmentFormProps) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Validate days of week
+    if (formData.days_of_week.length > 7) {
+      return; // This shouldn't happen due to UI constraints, but just in case
+    }
+    
     const submitData: CreateAssignmentData = {
       kid_id: formData.kid_id,
       task_template_id: formData.task_template_id,
@@ -75,7 +80,16 @@ const AssignmentForm = ({ assignment, onClose }: AssignmentFormProps) => {
       ...prev,
       days_of_week: prev.days_of_week.includes(day)
         ? prev.days_of_week.filter(d => d !== day)
-        : [...prev.days_of_week, day]
+        : prev.days_of_week.length < 7 
+          ? [...prev.days_of_week, day]
+          : prev.days_of_week // Don't add if already at max
+    }));
+  };
+
+  const removeDayFromSelection = (day: string) => {
+    setFormData(prev => ({
+      ...prev,
+      days_of_week: prev.days_of_week.filter(d => d !== day)
     }));
   };
   
@@ -141,23 +155,84 @@ const AssignmentForm = ({ assignment, onClose }: AssignmentFormProps) => {
       
       <div className="space-y-2">
         <Label>Days of Week</Label>
-        <div className="flex flex-wrap gap-2">
-          {DAYS_OF_WEEK.map(day => (
-            <div key={day.value} className="flex items-center space-x-2">
-              <Checkbox
-                id={`day-${day.value}`}
-                checked={formData.days_of_week.includes(day.value)}
-                onCheckedChange={() => handleDayToggle(day.value)}
-              />
-              <Label htmlFor={`day-${day.value}`} className="text-sm">
-                {day.label}
-              </Label>
+        <div className="space-y-2">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                className="w-full justify-between font-normal"
+              >
+                <span className="truncate">
+                  {formData.days_of_week.length === 0
+                    ? "All days (leave empty for any day)"
+                    : formData.days_of_week.length === 7
+                    ? "All days selected"
+                    : `${formData.days_of_week.length} day${formData.days_of_week.length > 1 ? 's' : ''} selected`
+                  }
+                </span>
+                <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-full p-0 bg-popover border border-border shadow-lg z-50" align="start">
+              <div className="max-h-64 overflow-auto bg-popover">
+                <div className="p-2 space-y-1">
+                  {DAYS_OF_WEEK.map((day) => (
+                    <div
+                      key={day.value}
+                      className={cn(
+                        "flex items-center space-x-2 rounded-sm px-2 py-1.5 cursor-pointer hover:bg-accent hover:text-accent-foreground",
+                        formData.days_of_week.includes(day.value) && "bg-accent text-accent-foreground"
+                      )}
+                      onClick={() => handleDayToggle(day.value)}
+                    >
+                      <Checkbox
+                        checked={formData.days_of_week.includes(day.value)}
+                        className="pointer-events-none"
+                      />
+                      <span className="flex-1 text-sm">{day.label}</span>
+                    </div>
+                  ))}
+                </div>
+                {formData.days_of_week.length >= 7 && (
+                  <div className="border-t border-border p-2">
+                    <p className="text-xs text-muted-foreground">Maximum 7 days selected</p>
+                  </div>
+                )}
+              </div>
+            </PopoverContent>
+          </Popover>
+          
+          {/* Selected days display */}
+          {formData.days_of_week.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {formData.days_of_week.map((day) => {
+                const dayLabel = DAYS_OF_WEEK.find(d => d.value === day)?.label || day;
+                return (
+                  <Badge key={day} variant="secondary" className="text-xs pr-1">
+                    {dayLabel}
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="ml-1 h-3 w-3 p-0 hover:bg-transparent"
+                      onClick={() => removeDayFromSelection(day)}
+                    >
+                      <X className="h-2 w-2" />
+                    </Button>
+                  </Badge>
+                );
+              })}
             </div>
-          ))}
+          )}
+          
+          <p className="text-xs text-muted-foreground">
+            {formData.days_of_week.length === 0 
+              ? "Leave empty to assign task for all days"
+              : `Selected ${formData.days_of_week.length} of 7 days`
+            }
+          </p>
         </div>
-        {formData.days_of_week.length === 0 && (
-          <p className="text-xs text-muted-foreground">Leave empty for all days</p>
-        )}
       </div>
       
       <div className="space-y-2">
