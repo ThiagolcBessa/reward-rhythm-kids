@@ -251,6 +251,51 @@ export const useGenerateTodayTasks = () => {
   });
 };
 
+// Hook to get kids for family (dropdown-specific)
+export const useKidsForFamily = () => {
+  const { data: family } = useFamily();
+  
+  return useQuery({
+    queryKey: ['kids-for-family', family?.id],
+    queryFn: async () => {
+      if (!family) return [];
+      
+      const { data, error } = await supabase
+        .from('kid')
+        .select('id, display_name')
+        .eq('family_id', family.id)
+        .order('display_name', { ascending: true });
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!family,
+  });
+};
+
+// Hook to get task templates for family (dropdown-specific)
+export const useTemplatesForFamily = () => {
+  const { data: family } = useFamily();
+  
+  return useQuery({
+    queryKey: ['templates-for-family', family?.id],
+    queryFn: async () => {
+      if (!family) return [];
+      
+      const { data, error } = await supabase
+        .from('task_template')
+        .select('id, title')
+        .eq('family_id', family.id)
+        .eq('active', true)
+        .order('title', { ascending: true });
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!family,
+  });
+};
+
 // Mutation to decide redemption
 export const useDecideRedemption = () => {
   const queryClient = useQueryClient();

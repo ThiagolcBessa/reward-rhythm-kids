@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useAssignments, useCreateAssignment, useUpdateAssignment, useDeleteAssignment, Assignment, CreateAssignmentData } from '@/hooks/use-assignments';
-import { useKids, useTaskTemplates } from '@/hooks/use-parent-data';
+import { useKids, useTaskTemplates, useKidsForFamily, useTemplatesForFamily } from '@/hooks/use-parent-data';
 import { Plus, Edit2, Trash2, CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -33,8 +33,8 @@ interface AssignmentFormProps {
 }
 
 const AssignmentForm = ({ assignment, onClose }: AssignmentFormProps) => {
-  const { data: kids } = useKids();
-  const { data: taskTemplates } = useTaskTemplates();
+  const { data: kids, isLoading: kidsLoading, error: kidsError } = useKidsForFamily();
+  const { data: taskTemplates, isLoading: templatesLoading, error: templatesError } = useTemplatesForFamily();
   const createMutation = useCreateAssignment();
   const updateMutation = useUpdateAssignment();
   
@@ -88,9 +88,14 @@ const AssignmentForm = ({ assignment, onClose }: AssignmentFormProps) => {
             value={formData.kid_id}
             onValueChange={(value) => setFormData(prev => ({ ...prev, kid_id: value }))}
             required
+            disabled={kidsLoading}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Select kid" />
+              <SelectValue placeholder={
+                kidsLoading ? "Loading kids..." : 
+                kidsError ? "Error loading kids" : 
+                "Select kid"
+              } />
             </SelectTrigger>
             <SelectContent>
               {kids?.map(kid => (
@@ -100,6 +105,9 @@ const AssignmentForm = ({ assignment, onClose }: AssignmentFormProps) => {
               ))}
             </SelectContent>
           </Select>
+          {kidsError && (
+            <p className="text-sm text-destructive">Failed to load kids</p>
+          )}
         </div>
         
         <div className="space-y-2">
@@ -108,18 +116,26 @@ const AssignmentForm = ({ assignment, onClose }: AssignmentFormProps) => {
             value={formData.task_template_id}
             onValueChange={(value) => setFormData(prev => ({ ...prev, task_template_id: value }))}
             required
+            disabled={templatesLoading}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Select task" />
+              <SelectValue placeholder={
+                templatesLoading ? "Loading templates..." : 
+                templatesError ? "Error loading templates" : 
+                "Select task"
+              } />
             </SelectTrigger>
             <SelectContent>
-              {taskTemplates?.filter(tt => tt.active).map(template => (
+              {taskTemplates?.map(template => (
                 <SelectItem key={template.id} value={template.id}>
-                  {template.icon_emoji} {template.title}
+                  {template.title}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
+          {templatesError && (
+            <p className="text-sm text-destructive">Failed to load task templates</p>
+          )}
         </div>
       </div>
       
