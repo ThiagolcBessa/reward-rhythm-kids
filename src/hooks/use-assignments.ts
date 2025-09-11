@@ -112,6 +112,18 @@ export const useCreateAssignment = () => {
       });
     },
     onError: (error: any) => {
+      // Handle unique constraint violation (duplicate assignment)
+      if (error.code === '23505') {
+        toast({
+          title: "Assignment already exists",
+          description: "This task is already assigned to this kid.",
+          variant: "destructive",
+        });
+        // Emit custom event to focus the Task Template field
+        window.dispatchEvent(new CustomEvent('focus-task-template'));
+        return;
+      }
+      
       toast({
         title: "Error creating assignment",
         description: error.message,
@@ -146,6 +158,18 @@ export const useUpdateAssignment = () => {
       });
     },
     onError: (error: any) => {
+      // Handle unique constraint violation (duplicate assignment)
+      if (error.code === '23505') {
+        toast({
+          title: "Assignment already exists",
+          description: "This task is already assigned to this kid.",
+          variant: "destructive",
+        });
+        // Emit custom event to focus the Task Template field
+        window.dispatchEvent(new CustomEvent('focus-task-template'));
+        return;
+      }
+      
       toast({
         title: "Error updating assignment",
         description: error.message,

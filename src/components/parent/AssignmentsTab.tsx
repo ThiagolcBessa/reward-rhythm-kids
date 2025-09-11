@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -37,6 +37,7 @@ const AssignmentForm = ({ assignment, onClose }: AssignmentFormProps) => {
   const { data: taskTemplates, isLoading: templatesLoading, error: templatesError } = useTemplatesForFamily();
   const createMutation = useCreateAssignment();
   const updateMutation = useUpdateAssignment();
+  const taskTemplateSelectRef = useRef<HTMLButtonElement>(null);
   
   const [formData, setFormData] = useState({
     kid_id: assignment?.kid_id || '',
@@ -92,6 +93,18 @@ const AssignmentForm = ({ assignment, onClose }: AssignmentFormProps) => {
       days_of_week: prev.days_of_week.filter(d => d !== day)
     }));
   };
+
+  // Listen for focus-task-template event
+  useEffect(() => {
+    const handleFocusTaskTemplate = () => {
+      if (taskTemplateSelectRef.current) {
+        taskTemplateSelectRef.current.focus();
+      }
+    };
+
+    window.addEventListener('focus-task-template', handleFocusTaskTemplate);
+    return () => window.removeEventListener('focus-task-template', handleFocusTaskTemplate);
+  }, []);
   
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -132,7 +145,7 @@ const AssignmentForm = ({ assignment, onClose }: AssignmentFormProps) => {
             required
             disabled={templatesLoading}
           >
-            <SelectTrigger>
+            <SelectTrigger ref={taskTemplateSelectRef}>
               <SelectValue placeholder={
                 templatesLoading ? "Loading templates..." : 
                 templatesError ? "Error loading templates" : 
