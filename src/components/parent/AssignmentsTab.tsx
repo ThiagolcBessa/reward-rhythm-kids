@@ -1,0 +1,402 @@
+import { useState } from 'react';
+import { format } from 'date-fns';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Checkbox } from '@/components/ui/checkbox';
+import { useAssignments, useCreateAssignment, useUpdateAssignment, useDeleteAssignment, Assignment, CreateAssignmentData } from '@/hooks/use-assignments';
+import { useKids, useTaskTemplates } from '@/hooks/use-parent-data';
+import { Plus, Edit2, Trash2, CalendarIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+const DAYS_OF_WEEK = [
+  { value: 'mon', label: 'Mon' },
+  { value: 'tue', label: 'Tue' },
+  { value: 'wed', label: 'Wed' },
+  { value: 'thu', label: 'Thu' },
+  { value: 'fri', label: 'Fri' },
+  { value: 'sat', label: 'Sat' },
+  { value: 'sun', label: 'Sun' },
+];
+
+interface AssignmentFormProps {
+  assignment?: Assignment;
+  onClose: () => void;
+}
+
+const AssignmentForm = ({ assignment, onClose }: AssignmentFormProps) => {
+  const { data: kids } = useKids();
+  const { data: taskTemplates } = useTaskTemplates();
+  const createMutation = useCreateAssignment();
+  const updateMutation = useUpdateAssignment();
+  
+  const [formData, setFormData] = useState({
+    kid_id: assignment?.kid_id || '',
+    task_template_id: assignment?.task_template_id || '',
+    days_of_week: assignment?.days_of_week || [],
+    base_points_override: assignment?.base_points_override || null,
+    start_date: assignment?.start_date ? new Date(assignment.start_date) : new Date(),
+    end_date: assignment?.end_date ? new Date(assignment.end_date) : null,
+    active: assignment?.active ?? true,
+  });
+  
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const submitData: CreateAssignmentData = {
+      kid_id: formData.kid_id,
+      task_template_id: formData.task_template_id,
+      days_of_week: formData.days_of_week.length > 0 ? formData.days_of_week : null,
+      base_points_override: formData.base_points_override,
+      start_date: format(formData.start_date, 'yyyy-MM-dd'),
+      end_date: formData.end_date ? format(formData.end_date, 'yyyy-MM-dd') : null,
+      active: formData.active,
+    };
+    
+    if (assignment) {
+      await updateMutation.mutateAsync({ id: assignment.id, ...submitData });
+    } else {
+      await createMutation.mutateAsync(submitData);
+    }
+    
+    onClose();
+  };
+  
+  const handleDayToggle = (day: string) => {
+    setFormData(prev => ({
+      ...prev,
+      days_of_week: prev.days_of_week.includes(day)
+        ? prev.days_of_week.filter(d => d !== day)
+        : [...prev.days_of_week, day]
+    }));
+  };
+  
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label>Kid</Label>
+          <Select
+            value={formData.kid_id}
+            onValueChange={(value) => setFormData(prev => ({ ...prev, kid_id: value }))}
+            required
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select kid" />
+            </SelectTrigger>
+            <SelectContent>
+              {kids?.map(kid => (
+                <SelectItem key={kid.id} value={kid.id}>
+                  {kid.display_name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <div className="space-y-2">
+          <Label>Task Template</Label>
+          <Select
+            value={formData.task_template_id}
+            onValueChange={(value) => setFormData(prev => ({ ...prev, task_template_id: value }))}
+            required
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select task" />
+            </SelectTrigger>
+            <SelectContent>
+              {taskTemplates?.filter(tt => tt.active).map(template => (
+                <SelectItem key={template.id} value={template.id}>
+                  {template.icon_emoji} {template.title}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      
+      <div className="space-y-2">
+        <Label>Days of Week</Label>
+        <div className="flex flex-wrap gap-2">
+          {DAYS_OF_WEEK.map(day => (
+            <div key={day.value} className="flex items-center space-x-2">
+              <Checkbox
+                id={`day-${day.value}`}
+                checked={formData.days_of_week.includes(day.value)}
+                onCheckedChange={() => handleDayToggle(day.value)}
+              />
+              <Label htmlFor={`day-${day.value}`} className="text-sm">
+                {day.label}
+              </Label>
+            </div>
+          ))}
+        </div>
+        {formData.days_of_week.length === 0 && (
+          <p className="text-xs text-muted-foreground">Leave empty for all days</p>
+        )}
+      </div>
+      
+      <div className="space-y-2">
+        <Label>Base Points Override</Label>
+        <Select
+          value={formData.base_points_override?.toString() || ''}
+          onValueChange={(value) => 
+            setFormData(prev => ({ 
+              ...prev, 
+              base_points_override: value ? parseInt(value) : null 
+            }))
+          }
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Use template default" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">Use template default</SelectItem>
+            <SelectItem value="5">5 points</SelectItem>
+            <SelectItem value="10">10 points</SelectItem>
+            <SelectItem value="15">15 points</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label>Start Date</Label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  "justify-start text-left font-normal",
+                  !formData.start_date && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {formData.start_date ? format(formData.start_date, "PPP") : "Pick a date"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={formData.start_date}
+                onSelect={(date) => date && setFormData(prev => ({ ...prev, start_date: date }))}
+                initialFocus
+                className="pointer-events-auto"
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+        
+        <div className="space-y-2">
+          <Label>End Date (Optional)</Label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  "justify-start text-left font-normal",
+                  !formData.end_date && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {formData.end_date ? format(formData.end_date, "PPP") : "No end date"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={formData.end_date || undefined}
+                onSelect={(date) => setFormData(prev => ({ ...prev, end_date: date || null }))}
+                initialFocus
+                className="pointer-events-auto"
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+      </div>
+      
+      <div className="flex items-center space-x-2">
+        <Switch
+          id="active"
+          checked={formData.active}
+          onCheckedChange={(checked) => setFormData(prev => ({ ...prev, active: checked }))}
+        />
+        <Label htmlFor="active">Active</Label>
+      </div>
+      
+      <div className="flex justify-end gap-2 pt-4">
+        <Button type="button" variant="outline" onClick={onClose}>
+          Cancel
+        </Button>
+        <Button 
+          type="submit" 
+          disabled={createMutation.isPending || updateMutation.isPending}
+        >
+          {assignment ? 'Update' : 'Create'}
+        </Button>
+      </div>
+    </form>
+  );
+};
+
+const AssignmentsTab = () => {
+  const { data: assignments, isLoading } = useAssignments();
+  const deleteMutation = useDeleteAssignment();
+  const [editingAssignment, setEditingAssignment] = useState<Assignment | null>(null);
+  const [showForm, setShowForm] = useState(false);
+  
+  const handleDelete = async (assignmentId: string) => {
+    if (confirm('Are you sure you want to delete this assignment?')) {
+      await deleteMutation.mutateAsync(assignmentId);
+    }
+  };
+  
+  if (isLoading) {
+    return <div>Loading assignments...</div>;
+  }
+  
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+        <div>
+          <h2 className="text-2xl font-bold">Task Assignments</h2>
+          <p className="text-muted-foreground">Assign specific tasks to kids with custom schedules</p>
+        </div>
+        
+        <Dialog open={showForm} onOpenChange={setShowForm}>
+          <DialogTrigger asChild>
+            <Button className="flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              New Assignment
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Create Task Assignment</DialogTitle>
+            </DialogHeader>
+            <AssignmentForm onClose={() => setShowForm(false)} />
+          </DialogContent>
+        </Dialog>
+      </div>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>Current Assignments</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Kid</TableHead>
+                  <TableHead>Task</TableHead>
+                  <TableHead>Days</TableHead>
+                  <TableHead>Points</TableHead>
+                  <TableHead>Period</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {assignments?.map(assignment => (
+                  <TableRow key={assignment.id}>
+                    <TableCell className="font-medium">
+                      {assignment.kid.display_name}
+                    </TableCell>
+                    <TableCell>
+                      {assignment.task_template.title}
+                    </TableCell>
+                    <TableCell>
+                      {assignment.days_of_week ? (
+                        <div className="flex flex-wrap gap-1">
+                          {assignment.days_of_week.map(day => (
+                            <Badge key={day} variant="secondary" className="text-xs">
+                              {day}
+                            </Badge>
+                          ))}
+                        </div>
+                      ) : (
+                        <Badge variant="outline" className="text-xs">All days</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {assignment.base_points_override || assignment.task_template.base_points} pts
+                      {assignment.base_points_override && (
+                        <Badge variant="outline" className="ml-1 text-xs">override</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-sm">
+                        <div>Start: {format(new Date(assignment.start_date), 'MMM d')}</div>
+                        {assignment.end_date && (
+                          <div className="text-muted-foreground">
+                            End: {format(new Date(assignment.end_date), 'MMM d')}
+                          </div>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={assignment.active ? 'default' : 'secondary'}>
+                        {assignment.active ? 'Active' : 'Inactive'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        <Dialog 
+                          open={editingAssignment?.id === assignment.id} 
+                          onOpenChange={(open) => setEditingAssignment(open ? assignment : null)}
+                        >
+                          <DialogTrigger asChild>
+                            <Button size="sm" variant="outline">
+                              <Edit2 className="h-4 w-4" />
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-2xl">
+                            <DialogHeader>
+                              <DialogTitle>Edit Assignment</DialogTitle>
+                            </DialogHeader>
+                            <AssignmentForm 
+                              assignment={editingAssignment!} 
+                              onClose={() => setEditingAssignment(null)} 
+                            />
+                          </DialogContent>
+                        </Dialog>
+                        
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          onClick={() => handleDelete(assignment.id)}
+                          disabled={deleteMutation.isPending}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                
+                {!assignments?.length && (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                      No assignments yet. Create your first one!
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+export default AssignmentsTab;
