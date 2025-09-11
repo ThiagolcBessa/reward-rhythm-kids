@@ -41,7 +41,7 @@ export const useAssignments = () => {
   const { data: family } = useFamily();
   
   return useQuery({
-    queryKey: ['assignments', family?.id],
+    queryKey: ['assignments-list', family?.id],
     queryFn: async () => {
       if (!family) return [];
       
@@ -92,6 +92,7 @@ export const useAssignments = () => {
 export const useCreateAssignment = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { data: family } = useFamily();
   
   return useMutation({
     mutationFn: async (assignmentData: CreateAssignmentData) => {
@@ -105,7 +106,9 @@ export const useCreateAssignment = () => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['assignments'] });
+      if (family?.id) {
+        queryClient.invalidateQueries({ queryKey: ['assignments-list', family.id] });
+      }
       toast({
         title: "Assignment created!",
         description: "Task has been assigned successfully.",
@@ -137,6 +140,7 @@ export const useCreateAssignment = () => {
 export const useUpdateAssignment = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { data: family } = useFamily();
   
   return useMutation({
     mutationFn: async ({ id, ...updateData }: UpdateAssignmentData) => {
@@ -151,7 +155,9 @@ export const useUpdateAssignment = () => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['assignments'] });
+      if (family?.id) {
+        queryClient.invalidateQueries({ queryKey: ['assignments-list', family.id] });
+      }
       toast({
         title: "Assignment updated!",
         description: "Changes have been saved successfully.",
@@ -183,6 +189,7 @@ export const useUpdateAssignment = () => {
 export const useDeleteAssignment = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { data: family } = useFamily();
   
   return useMutation({
     mutationFn: async (assignmentId: string) => {
@@ -194,7 +201,9 @@ export const useDeleteAssignment = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['assignments'] });
+      if (family?.id) {
+        queryClient.invalidateQueries({ queryKey: ['assignments-list', family.id] });
+      }
       toast({
         title: "Assignment deleted",
         description: "Task assignment has been removed.",
