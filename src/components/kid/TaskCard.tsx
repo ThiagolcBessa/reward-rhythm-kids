@@ -3,10 +3,11 @@ import { CheckCircle, Circle, Coins } from 'lucide-react';
 import Confetti from 'react-confetti';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
-import { useCompleteTaskForDate } from '@/hooks/use-supabase-rpc';
+import { useMutationWithToasts } from '@/hooks/use-mutation-toasts';
+import { supabase } from '@/integrations/supabase/client';
 import type { DailyTask } from '@/hooks/use-supabase-rpc';
 import { useParams } from 'react-router-dom';
+import { getWeekInfo } from '@/lib/date-utils';
 
 interface TaskCardProps {
   task: DailyTask;
@@ -14,9 +15,40 @@ interface TaskCardProps {
 
 export const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
   const [showConfetti, setShowConfetti] = useState(false);
-  const { toast } = useToast();
   const { kidId } = useParams<{ kidId: string }>();
-  const completeTaskMutation = useCompleteTaskForDate();
+  
+  const today = new Date();
+  const todayISO = today.toISOString().split('T')[0];
+  const weekInfo = getWeekInfo(today);
+
+  const completeTaskMutation = useMutationWithToasts(
+    async ({ kidId, taskTemplateId }: { kidId: string; taskTemplateId: string }) => {
+      const { data, error } = await supabase.rpc('complete_task_for_date' as any, {
+        p_kid_id: kidId,
+        p_task_template_id: taskTemplateId,
+        p_date: todayISO,
+      });
+      
+      if (error) throw error;
+      return data as number; // Returns updated points balance
+    },
+    {
+      success: { 
+        title: "Task completed", 
+        description: `+${task.task_template.base_points} points` 
+      },
+      error: { title: "Task completion failed" },
+      invalidate: [
+        ['tasks-for-date', kidId, todayISO],
+        ['kid-balance', kidId],
+        ['tasks-calendar', kidId, weekInfo.weekStartISO, weekInfo.weekEndISO]
+      ],
+      onSuccessExtra: () => {
+        setShowConfetti(true);
+        setTimeout(() => setShowConfetti(false), 3000);
+      }
+    }
+  );
 
   const isCompleted = task.status === 'done';
   const isPending = task.status === 'pending';
@@ -24,29 +56,10 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
   const handleComplete = async () => {
     if (!kidId || !isPending) return;
     
-    try {
-      const newBalance = await completeTaskMutation.mutateAsync({
-        kidId,
-        taskTemplateId: task.task_template_id,
-      });
-      
-      // Show confetti
-      setShowConfetti(true);
-      setTimeout(() => setShowConfetti(false), 3000);
-      
-      // Success toast with points earned
-      toast({
-        title: "🎉 Task completed!",
-        description: `+${task.task_template.base_points} points earned!`,
-        duration: 4000,
-      });
-    } catch (error: any) {
-      toast({
-        title: "Oops!",
-        description: error.message || "Something went wrong. Please try again!",
-        variant: "destructive",
-      });
-    }
+    await completeTaskMutation.mutateAsync({
+      kidId,
+      taskTemplateId: task.task_template_id,
+    });
   };
 
   return (

@@ -3,8 +3,9 @@ import { ChevronLeft, ChevronRight, CheckCircle, Circle, Coins } from 'lucide-re
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { useToast } from '@/hooks/use-toast';
-import { useKidTasksCalendar, useCompleteTaskForDate } from '@/hooks/use-supabase-rpc';
+import { useMutationWithToasts } from '@/hooks/use-mutation-toasts';
+import { useKidTasksCalendar } from '@/hooks/use-supabase-rpc';
+import { supabase } from '@/integrations/supabase/client';
 import { useParams } from 'react-router-dom';
 import Confetti from 'react-confetti';
 import { getWeekInfo, getNextWeek, getPreviousWeek, formatCalendarHeader, getWeekDays } from '@/lib/date-utils';
@@ -29,8 +30,39 @@ const CalendarView: React.FC<CalendarViewProps> = ({ kidId: propKidId, viewType 
   
   const [currentWeek, setCurrentWeek] = useState(() => getWeekInfo(new Date()));
   const [showConfetti, setShowConfetti] = useState(false);
-  const { toast } = useToast();
-  const completeTaskMutation = useCompleteTaskForDate();
+  
+  const today = new Date();
+  const todayISO = today.toISOString().split('T')[0];
+
+  const completeTaskMutation = useMutationWithToasts(
+    async ({ kidId, taskTemplateId, taskPoints }: { kidId: string; taskTemplateId: string; taskPoints: number }) => {
+      const { data, error } = await supabase.rpc('complete_task_for_date' as any, {
+        p_kid_id: kidId,
+        p_task_template_id: taskTemplateId,
+        p_date: todayISO,
+      });
+      
+      if (error) throw error;
+      return { balance: data as number, points: taskPoints };
+    },
+    {
+      success: (data) => ({ 
+        title: "Task completed", 
+        description: `+${data.points} points`
+      }),
+      error: { title: "Task completion failed" },
+      invalidate: [
+        ['tasks-for-date', kidId, todayISO],
+        ['kid-balance', kidId],
+        ['tasks-calendar', kidId, currentWeek.weekStartISO, currentWeek.weekEndISO]
+      ],
+      onSuccessExtra: (data) => {
+        // Show confetti
+        setShowConfetti(true);
+        setTimeout(() => setShowConfetti(false), 3000);
+      }
+    }
+  );
 
   // Get week days using utility
   const weekDays = getWeekDays(currentWeek.weekStart);
@@ -58,29 +90,11 @@ const CalendarView: React.FC<CalendarViewProps> = ({ kidId: propKidId, viewType 
       return;
     }
 
-    try {
-      await completeTaskMutation.mutateAsync({
-        kidId,
-        taskTemplateId: task.task_template_id,
-      });
-
-      // Show confetti
-      setShowConfetti(true);
-      setTimeout(() => setShowConfetti(false), 3000);
-
-      // Success toast
-      toast({
-        title: "🎉 Task completed!",
-        description: `+${task.base_points} points earned!`,
-        duration: 4000,
-      });
-    } catch (error: any) {
-      toast({
-        title: "Oops!",
-        description: error.message || "Something went wrong. Please try again!",
-        variant: "destructive",
-      });
-    }
+    await completeTaskMutation.mutateAsync({
+      kidId,
+      taskTemplateId: task.task_template_id,
+      taskPoints: task.base_points,
+    });
   };
 
   if (isLoading) {

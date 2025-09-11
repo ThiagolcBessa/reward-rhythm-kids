@@ -6,7 +6,7 @@ import { useQueryClient } from "@tanstack/react-query";
 type Key = readonly unknown[];
 
 type ToastOpts<TData = any> = {
-  success?: { title: string; description?: string };
+  success?: { title: string; description?: string } | ((data: TData) => { title: string; description?: string });
   error?: { title: string; description?: string }; // description will be replaced by pgFriendlyMessage(err)
   invalidate?: Key[];
   refetch?: Key[];
@@ -30,7 +30,12 @@ export function useMutationWithToasts<TData = any, TVariables = any>(
     ...(reactOpts || {}),
     mutationFn,
     onSuccess: async (data, vars, ctx) => {
-      if (opts.success) notifySuccess(opts.success.title, opts.success.description);
+      if (opts.success) {
+        const toastConfig = typeof opts.success === 'function' 
+          ? opts.success(data) 
+          : opts.success;
+        notifySuccess(toastConfig.title, toastConfig.description);
+      }
       await invalidateOrRefetch(qc, opts);
       if (opts.onSuccessExtra) await opts.onSuccessExtra(data);
       if (reactOpts?.onSuccess) await reactOpts.onSuccess(data, vars, ctx);
