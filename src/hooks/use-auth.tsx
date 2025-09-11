@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { showToast } from '@/lib/toast-bus';
 
 interface AuthContextType {
   user: User | null;
@@ -20,7 +20,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [initialized, setInitialized] = useState(false);
-  const { toast } = useToast();
 
   useEffect(() => {
     let mounted = true;
@@ -84,7 +83,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       if (error) {
         console.error('Sign in error:', error);
-        toast({
+        showToast({
           title: "Sign in failed",
           description: error.message,
           variant: "destructive",
@@ -94,7 +93,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       return { error };
     } catch (networkError) {
       console.error('Network error during sign in:', networkError);
-      toast({
+      showToast({
         title: "Connection failed",
         description: "Unable to connect to authentication service. Please check your internet connection.",
         variant: "destructive",
@@ -114,13 +113,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     });
     
     if (error) {
-      toast({
+      showToast({
         title: "Magic link failed",
         description: error.message,
         variant: "destructive",
       });
     } else {
-      toast({
+      showToast({
         title: "Check your email",
         description: "We've sent you a magic link to sign in.",
       });
@@ -141,13 +140,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     });
     
     if (error) {
-      toast({
+      showToast({
         title: "Sign up failed",
         description: error.message,
         variant: "destructive",
       });
     } else {
-      toast({
+      showToast({
         title: "Check your email",
         description: "We've sent you a confirmation link to complete your sign up.",
       });
@@ -158,7 +157,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signOut = async () => {
     await supabase.auth.signOut();
-    toast({
+    showToast({
       title: "Signed out",
       description: "You have been signed out successfully.",
     });
