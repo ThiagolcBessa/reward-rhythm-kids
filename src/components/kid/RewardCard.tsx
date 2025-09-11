@@ -1,7 +1,7 @@
 import { Coins, ShoppingCart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
+import { notifyError } from '@/lib/notify';
 import { useRedeemReward, useKidBalance } from '@/hooks/use-supabase-rpc';
 import type { Reward } from '@/hooks/use-supabase-rpc';
 
@@ -11,7 +11,6 @@ interface RewardCardProps {
 }
 
 export const RewardCard: React.FC<RewardCardProps> = ({ reward, kidId }) => {
-  const { toast } = useToast();
   const { data: balance = 0 } = useKidBalance(kidId);
   const redeemMutation = useRedeemReward();
 
@@ -19,11 +18,7 @@ export const RewardCard: React.FC<RewardCardProps> = ({ reward, kidId }) => {
 
   const handleRedeem = async () => {
     if (!canAfford) {
-      toast({
-        title: "Not enough points!",
-        description: `You need ${reward.cost_points - balance} more points to get this reward.`,
-        variant: "destructive",
-      });
+      notifyError("Not enough points!", `You need ${reward.cost_points - balance} more points to get this reward.`);
       return;
     }
 

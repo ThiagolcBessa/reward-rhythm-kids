@@ -70,7 +70,7 @@ const RewardForm = ({ reward, onClose }: RewardFormProps) => {
         });
       }
       
-      queryClient.invalidateQueries({ queryKey: ['rewards'] });
+      queryClient.invalidateQueries({ queryKey: ['rewards-list', family?.id] });
       onClose();
     } catch (error: any) {
       toast({
@@ -150,6 +150,7 @@ const RewardForm = ({ reward, onClose }: RewardFormProps) => {
 
 const RewardsTab = () => {
   const { data: rewards, isLoading } = useRewards();
+  const { data: family } = useFamily();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [editingReward, setEditingReward] = useState<Reward | null>(null);
@@ -164,7 +165,7 @@ const RewardsTab = () => {
       
       if (error) throw error;
       
-      queryClient.invalidateQueries({ queryKey: ['rewards'] });
+      queryClient.invalidateQueries({ queryKey: ['rewards-list', family?.id] });
       toast({
         title: "Reward deleted",
         description: "The reward has been removed.",

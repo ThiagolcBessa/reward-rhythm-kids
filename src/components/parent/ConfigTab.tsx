@@ -8,13 +8,13 @@ import { useAuth } from '@/hooks/use-auth';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
+import { notifySuccess, notifyError, pgFriendlyMessage } from '@/lib/notify';
 import { Settings, User, LogOut } from 'lucide-react';
 
 const ConfigTab = () => {
   const { data: family, isLoading } = useFamily();
   const { user, signOut } = useAuth();
   const queryClient = useQueryClient();
-  const { toast } = useToast();
   
   const [familyName, setFamilyName] = useState(family?.name || '');
   const [isUpdating, setIsUpdating] = useState(false);
@@ -41,16 +41,9 @@ const ConfigTab = () => {
       if (error) throw error;
       
       queryClient.invalidateQueries({ queryKey: ['family'] });
-      toast({
-        title: "Family updated!",
-        description: "Your family name has been saved.",
-      });
+      notifySuccess("Family updated!", "Your family name has been saved.");
     } catch (error: any) {
-      toast({
-        title: "Error updating family",
-        description: error.message,
-        variant: "destructive",
-      });
+      notifyError("Error updating family", pgFriendlyMessage(error));
     } finally {
       setIsUpdating(false);
     }

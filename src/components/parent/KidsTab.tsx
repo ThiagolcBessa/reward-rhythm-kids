@@ -7,10 +7,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useKids, useFamily } from '@/hooks/use-parent-data';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
-import { useToast } from '@/hooks/use-toast';
 import { Plus, Edit2, Trash2, Users } from 'lucide-react';
 import { Kid } from '@/hooks/use-parent-data';
 import { AvatarUploader } from '@/components/ui/AvatarUploader';
+import { notifySuccess, notifyError, pgFriendlyMessage } from '@/lib/notify';
 
 interface KidFormProps {
   kid?: Kid;
@@ -27,7 +27,6 @@ const KidForm = ({ kid, onClose }: KidFormProps) => {
   
   const { data: family } = useFamily();
   const queryClient = useQueryClient();
-  const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const handleSubmit = async (e: React.FormEvent) => {
@@ -53,10 +52,7 @@ const KidForm = ({ kid, onClose }: KidFormProps) => {
         
         if (error) throw error;
         
-        toast({
-          title: "Kid updated!",
-          description: "Changes have been saved.",
-        });
+        notifySuccess("Kid updated!", "Changes have been saved.");
       } else {
         // Create new kid
         const { error } = await supabase
@@ -65,20 +61,13 @@ const KidForm = ({ kid, onClose }: KidFormProps) => {
         
         if (error) throw error;
         
-        toast({
-          title: "Kid added!",
-          description: "New kid has been added to your family.",
-        });
+        notifySuccess("Kid added!", "New kid has been added to your family.");
       }
       
       queryClient.invalidateQueries({ queryKey: ['kids'] });
       onClose();
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+      notifyError("Error", pgFriendlyMessage(error));
     } finally {
       setIsSubmitting(false);
     }
@@ -154,7 +143,6 @@ const KidForm = ({ kid, onClose }: KidFormProps) => {
 const KidsTab = () => {
   const { data: kids, isLoading } = useKids();
   const queryClient = useQueryClient();
-  const { toast } = useToast();
   const [editingKid, setEditingKid] = useState<Kid | null>(null);
   const [showForm, setShowForm] = useState(false);
   
@@ -168,16 +156,9 @@ const KidsTab = () => {
       if (error) throw error;
       
       queryClient.invalidateQueries({ queryKey: ['kids'] });
-      toast({
-        title: "Kid removed",
-        description: "The kid has been removed from your family.",
-      });
+      notifySuccess("Kid removed", "The kid has been removed from your family.");
     } catch (error: any) {
-      toast({
-        title: "Error removing kid",
-        description: error.message,
-        variant: "destructive",
-      });
+      notifyError("Error removing kid", pgFriendlyMessage(error));
     }
   };
   

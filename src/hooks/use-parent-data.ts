@@ -175,7 +175,7 @@ export const useRewards = () => {
   const { data: family } = useFamily();
   
   return useQuery({
-    queryKey: ['rewards', family?.id],
+    queryKey: ['rewards-list', family?.id],
     queryFn: async () => {
       if (!family) return [];
       
@@ -197,7 +197,7 @@ export const useRedemptions = () => {
   const { data: family } = useFamily();
   
   return useQuery({
-    queryKey: ['redemptions', family?.id],
+    queryKey: ['redemptions-pending', family?.id],
     queryFn: async () => {
       if (!family) return [];
       
@@ -313,7 +313,7 @@ export const useDecideRedemption = () => {
       
       // Invalidate queries
       if (family?.id) {
-        queryClient.invalidateQueries({ queryKey: ['redemptions', family.id] });
+        queryClient.invalidateQueries({ queryKey: ['redemptions-pending', family.id] });
       }
       if (variables.kidId) {
         queryClient.invalidateQueries({ queryKey: ['kid-balance', variables.kidId] });

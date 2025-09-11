@@ -257,26 +257,33 @@ export const useRedeemReward = () => {
 
 // Mutation to grant bonus
 export const useGrantBonus = () => {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: async ({ kidId, period }: { kidId: string; period: 'daily' | 'weekly' }) => {
+  return useMutationWithToasts(
+    async ({ kidId, period }: { kidId: string; period: 'daily' | 'weekly' }) => {
       const { data, error } = await supabase.rpc('grant_bonus', {
         p_kid_id: kidId,
         p_period: period,
       });
       
       if (error) throw error;
-      return data as number; // Returns updated balance
+      return { balance: data as number, kidId, period }; // Returns updated balance with context
     },
-    onSuccess: (_, { kidId, period }) => {
-      const today = new Date().toISOString().split('T')[0];
-      queryClient.invalidateQueries({ queryKey: ['tasks-for-date', kidId, today] });
-      queryClient.invalidateQueries({ queryKey: ['kid-balance', kidId] });
-      queryClient.invalidateQueries({ queryKey: ['kid-points-history', kidId] });
-      queryClient.invalidateQueries({ queryKey: ['bonus-eligibility', kidId, period] });
-    },
-  });
+    {
+      success: (result) => ({
+        title: "🏆 BONUS EARNED!", 
+        description: `Amazing! You got bonus points! New balance: ${result.balance}`
+      }),
+      error: { title: "Bonus already claimed", description: "You've already earned your bonus for this period!" },
+      invalidate: [],
+      onSuccessExtra: (result) => {
+        const queryClient = useQueryClient();
+        const today = new Date().toISOString().split('T')[0];
+        queryClient.invalidateQueries({ queryKey: ['tasks-for-date', result.kidId, today] });
+        queryClient.invalidateQueries({ queryKey: ['kid-balance', result.kidId] });
+        queryClient.invalidateQueries({ queryKey: ['kid-points-history', result.kidId] });
+        queryClient.invalidateQueries({ queryKey: ['bonus-eligibility', result.kidId, result.period] });
+      }
+    }
+  );
 };
 
 // Hook to check bonus eligibility

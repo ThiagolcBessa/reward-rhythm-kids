@@ -22,10 +22,10 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
+    <Toaster />
+    <ToastBridge />
+    <Sonner />
     <TooltipProvider>
-      <Toaster />
-      <ToastBridge />
-      <Sonner />
       <AuthProvider>
         <BrowserRouter>
           <Routes>
