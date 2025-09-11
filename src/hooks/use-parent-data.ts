@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/use-auth';
-import { useToast } from '@/hooks/use-toast';
+import { showToast } from '@/lib/toast-bus';
 
 // Types for parent dashboard
 export interface Family {
@@ -220,7 +220,6 @@ export const useRedemptions = () => {
 // Mutation to generate today's tasks
 export const useGenerateTodayTasks = () => {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
   const { data: family } = useFamily();
   
   return useMutation({
@@ -236,13 +235,13 @@ export const useGenerateTodayTasks = () => {
     },
     onSuccess: (taskCount) => {
       queryClient.invalidateQueries({ queryKey: ['kids'] });
-      toast({
+      showToast({
         title: "Tasks generated!",
         description: `Generated ${taskCount} tasks for today.`,
       });
     },
     onError: (error: any) => {
-      toast({
+      showToast({
         title: "Error generating tasks",
         description: error.message,
         variant: "destructive",
@@ -299,7 +298,7 @@ export const useTemplatesForFamily = () => {
 // Mutation to decide redemption
 export const useDecideRedemption = () => {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
+  
   
   return useMutation({
     mutationFn: async ({ redemptionId, decision }: { 
@@ -324,13 +323,13 @@ export const useDecideRedemption = () => {
         delivered: "Reward marked as delivered! ✅"
       };
       
-      toast({
+      showToast({
         title: messages[decision],
         description: decision === 'approved' ? "Points have been deducted" : "",
       });
     },
     onError: (error: any) => {
-      toast({
+      showToast({
         title: "Error processing redemption",
         description: error.message,
         variant: "destructive",

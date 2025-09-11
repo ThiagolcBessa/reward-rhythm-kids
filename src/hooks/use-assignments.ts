@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { showToast } from '@/lib/toast-bus';
 import { useFamily } from '@/hooks/use-parent-data';
 
 export interface Assignment {
@@ -91,7 +91,6 @@ export const useAssignments = () => {
 // Hook to create assignment
 export const useCreateAssignment = () => {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
   const { data: family } = useFamily();
   
   return useMutation({
@@ -109,7 +108,7 @@ export const useCreateAssignment = () => {
       if (family?.id) {
         queryClient.invalidateQueries({ queryKey: ['assignments-list', family.id] });
       }
-      toast({
+      showToast({
         title: "Assignment created!",
         description: "Task has been assigned successfully.",
       });
@@ -117,7 +116,7 @@ export const useCreateAssignment = () => {
     onError: (error: any) => {
       // Handle unique constraint violation (duplicate assignment)
       if (error.code === '23505') {
-        toast({
+        showToast({
           title: "Assignment already exists",
           description: "This task is already assigned to this kid.",
           variant: "destructive",
@@ -127,7 +126,7 @@ export const useCreateAssignment = () => {
         return;
       }
       
-      toast({
+      showToast({
         title: "Error creating assignment",
         description: error.message,
         variant: "destructive",
@@ -139,7 +138,6 @@ export const useCreateAssignment = () => {
 // Hook to update assignment
 export const useUpdateAssignment = () => {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
   const { data: family } = useFamily();
   
   return useMutation({
@@ -158,7 +156,7 @@ export const useUpdateAssignment = () => {
       if (family?.id) {
         queryClient.invalidateQueries({ queryKey: ['assignments-list', family.id] });
       }
-      toast({
+      showToast({
         title: "Assignment updated!",
         description: "Changes have been saved successfully.",
       });
@@ -166,7 +164,7 @@ export const useUpdateAssignment = () => {
     onError: (error: any) => {
       // Handle unique constraint violation (duplicate assignment)
       if (error.code === '23505') {
-        toast({
+        showToast({
           title: "Assignment already exists",
           description: "This task is already assigned to this kid.",
           variant: "destructive",
@@ -176,7 +174,7 @@ export const useUpdateAssignment = () => {
         return;
       }
       
-      toast({
+      showToast({
         title: "Error updating assignment",
         description: error.message,
         variant: "destructive",
@@ -188,7 +186,7 @@ export const useUpdateAssignment = () => {
 // Hook to delete assignment
 export const useDeleteAssignment = () => {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
+  
   const { data: family } = useFamily();
   
   return useMutation({
@@ -204,13 +202,13 @@ export const useDeleteAssignment = () => {
       if (family?.id) {
         queryClient.invalidateQueries({ queryKey: ['assignments-list', family.id] });
       }
-      toast({
+      showToast({
         title: "Assignment deleted",
         description: "Task assignment has been removed.",
       });
     },
     onError: (error: any) => {
-      toast({
+      showToast({
         title: "Error deleting assignment",
         description: error.message,
         variant: "destructive",
