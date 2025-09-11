@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import CalendarView from '@/components/kid/CalendarView';
+import { CalendarView } from '@/components/kid/CalendarView';
 import { useKids } from '@/hooks/use-parent-data';
 
 const CalendarTab = () => {

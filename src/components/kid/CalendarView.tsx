@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, eachDayOfInterval, isSameDay, isToday } from 'date-fns';
 import { ChevronLeft, ChevronRight, CheckCircle, Circle, Coins } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -8,6 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useKidTasksCalendar, useCompleteTaskForDate } from '@/hooks/use-supabase-rpc';
 import { useParams } from 'react-router-dom';
 import Confetti from 'react-confetti';
+import { getWeekInfo, getNextWeek, getPreviousWeek, formatCalendarHeader, getWeekDays } from '@/lib/date-utils';
 
 interface CalendarViewProps {
   kidId?: string; // Optional for parent view
@@ -27,21 +27,15 @@ const CalendarView: React.FC<CalendarViewProps> = ({ kidId: propKidId, viewType 
   const { kidId: paramKidId } = useParams<{ kidId: string }>();
   const kidId = propKidId || paramKidId!;
   
-  const [currentWeek, setCurrentWeek] = useState(new Date());
+  const [currentWeek, setCurrentWeek] = useState(() => getWeekInfo(new Date()));
   const [showConfetti, setShowConfetti] = useState(false);
   const { toast } = useToast();
   const completeTaskMutation = useCompleteTaskForDate();
 
-  // Calculate week boundaries (Monday to Sunday)
-  const weekStart = startOfWeek(currentWeek, { weekStartsOn: 1 });
-  const weekEnd = endOfWeek(currentWeek, { weekStartsOn: 1 });
-  const weekDays = eachDayOfInterval({ start: weekStart, end: weekEnd });
+  // Get week days using utility
+  const weekDays = getWeekDays(currentWeek.weekStart);
 
-  // Format dates for RPC call
-  const startDate = format(weekStart, 'yyyy-MM-dd');
-  const endDate = format(weekEnd, 'yyyy-MM-dd');
-
-  const { data: tasks, isLoading } = useKidTasksCalendar(kidId, startDate, endDate);
+  const { data: tasks, isLoading } = useKidTasksCalendar(kidId, currentWeek.weekStartISO, currentWeek.weekEndISO);
 
   // Group tasks by date
   const tasksByDate = tasks?.reduce((acc, task) => {
@@ -51,15 +45,16 @@ const CalendarView: React.FC<CalendarViewProps> = ({ kidId: propKidId, viewType 
   }, {} as Record<string, TaskItem[]>) || {};
 
   const handlePreviousWeek = () => {
-    setCurrentWeek(prev => subWeeks(prev, 1));
+    setCurrentWeek(getPreviousWeek(currentWeek.weekStart));
   };
 
   const handleNextWeek = () => {
-    setCurrentWeek(prev => addWeeks(prev, 1));
+    setCurrentWeek(getNextWeek(currentWeek.weekStart));
   };
 
   const handleCompleteTask = async (task: TaskItem) => {
-    if (viewType !== 'kid' || task.status !== 'pending' || !isToday(new Date(task.due_date))) {
+    const today = new Date().toISOString().split('T')[0];
+    if (viewType !== 'kid' || task.status !== 'pending' || task.due_date !== today) {
       return;
     }
 
@@ -131,7 +126,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ kidId: propKidId, viewType 
           </Button>
 
           <h2 className="text-lg font-semibold text-center">
-            {format(weekStart, 'MMM d')} - {format(weekEnd, 'MMM d, yyyy')}
+            {formatCalendarHeader(currentWeek.weekStart)} - {formatCalendarHeader(currentWeek.weekEnd)}
           </h2>
 
           <Button
@@ -148,9 +143,10 @@ const CalendarView: React.FC<CalendarViewProps> = ({ kidId: propKidId, viewType 
         {/* Calendar Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-3">
           {weekDays.map((day) => {
-            const dateStr = format(day, 'yyyy-MM-dd');
+            const dateStr = day.toISOString().split('T')[0];
             const dayTasks = tasksByDate[dateStr] || [];
-            const isCurrentDay = isToday(day);
+            const today = new Date().toISOString().split('T')[0];
+            const isCurrentDay = dateStr === today;
 
             return (
               <Card
@@ -162,12 +158,12 @@ const CalendarView: React.FC<CalendarViewProps> = ({ kidId: propKidId, viewType 
                 {/* Day Header */}
                 <div className="text-center mb-3">
                   <div className="text-xs font-medium text-gray-500 uppercase">
-                    {format(day, 'EEE')}
+                    {formatCalendarHeader(day).split(' ')[0]}
                   </div>
                   <div className={`text-lg font-semibold ${
                     isCurrentDay ? 'text-kid-primary' : 'text-gray-700'
                   }`}>
-                    {format(day, 'd')}
+                    {formatCalendarHeader(day).split(' ')[1]}
                   </div>
                   {isCurrentDay && (
                     <Badge variant="default" className="text-xs bg-kid-primary">
@@ -281,4 +277,4 @@ const CalendarView: React.FC<CalendarViewProps> = ({ kidId: propKidId, viewType 
   );
 };
 
-export default CalendarView;
+export { CalendarView };

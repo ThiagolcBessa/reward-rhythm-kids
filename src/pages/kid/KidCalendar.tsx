@@ -1,7 +1,7 @@
 import { useParams } from 'react-router-dom';
 import { KidHeader } from '@/components/kid/KidHeader';
 import { NavigationButtons } from '@/components/kid/NavigationButtons';
-import CalendarView from '@/components/kid/CalendarView';
+import { CalendarView } from '@/components/kid/CalendarView';
 import { useKidInfo } from '@/hooks/use-supabase-rpc';
 
 const KidCalendar = () => {
