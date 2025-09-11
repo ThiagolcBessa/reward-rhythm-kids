@@ -92,8 +92,8 @@ export const useAssignments = () => {
 export const useCreateAssignment = () => {
   const { data: family } = useFamily();
   
-  return useMutationWithToasts(
-    async (assignmentData: CreateAssignmentData) => {
+  return useMutationWithToasts({
+    mutationFn: async (assignmentData: CreateAssignmentData) => {
       const { data, error } = await supabase
         .from('kid_task_assignment' as any)
         .insert(assignmentData as any)
@@ -103,27 +103,25 @@ export const useCreateAssignment = () => {
       if (error) throw error;
       return data;
     },
-    {
-      success: { title: "Assignment saved" },
-      error: { title: "Could not save assignment" },
-      invalidate: family?.id ? [['assignments-list', family.id]] : [],
-      onErrorExtra: (error: any) => {
-        // Handle unique constraint violation (duplicate assignment)
-        if (error.code === '23505') {
-          // Emit custom event to focus the Task Template field
-          window.dispatchEvent(new CustomEvent('focus-task-template'));
-        }
+    successToast: { title: "Assignment saved" },
+    errorToast: { title: "Could not save assignment" },
+    invalidateQueries: family?.id ? [['assignments-list', family.id]] : [],
+    onError: (error: any) => {
+      // Handle unique constraint violation (duplicate assignment)
+      if (error.code === '23505') {
+        // Emit custom event to focus the Task Template field
+        window.dispatchEvent(new CustomEvent('focus-task-template'));
       }
     }
-  );
+  });
 };
 
 // Hook to update assignment
 export const useUpdateAssignment = () => {
   const { data: family } = useFamily();
   
-  return useMutationWithToasts(
-    async ({ id, ...updateData }: UpdateAssignmentData) => {
+  return useMutationWithToasts({
+    mutationFn: async ({ id, ...updateData }: UpdateAssignmentData) => {
       const { data, error } = await supabase
         .from('kid_task_assignment' as any)
         .update(updateData as any)
@@ -134,27 +132,25 @@ export const useUpdateAssignment = () => {
       if (error) throw error;
       return data;
     },
-    {
-      success: { title: "Assignment saved" },
-      error: { title: "Could not save assignment" },
-      invalidate: family?.id ? [['assignments-list', family.id]] : [],
-      onErrorExtra: (error: any) => {
-        // Handle unique constraint violation (duplicate assignment)
-        if (error.code === '23505') {
-          // Emit custom event to focus the Task Template field
-          window.dispatchEvent(new CustomEvent('focus-task-template'));
-        }
+    successToast: { title: "Assignment saved" },
+    errorToast: { title: "Could not save assignment" },
+    invalidateQueries: family?.id ? [['assignments-list', family.id]] : [],
+    onError: (error: any) => {
+      // Handle unique constraint violation (duplicate assignment)
+      if (error.code === '23505') {
+        // Emit custom event to focus the Task Template field
+        window.dispatchEvent(new CustomEvent('focus-task-template'));
       }
     }
-  );
+  });
 };
 
 // Hook to delete assignment
 export const useDeleteAssignment = () => {
   const { data: family } = useFamily();
   
-  return useMutationWithToasts(
-    async (assignmentId: string) => {
+  return useMutationWithToasts({
+    mutationFn: async (assignmentId: string) => {
       const { error } = await supabase
         .from('kid_task_assignment' as any)
         .delete()
@@ -162,10 +158,8 @@ export const useDeleteAssignment = () => {
       
       if (error) throw error;
     },
-    {
-      success: { title: "Assignment removed" },
-      error: { title: "Could not remove assignment" },
-      invalidate: family?.id ? [['assignments-list', family.id]] : []
-    }
-  );
+    successToast: { title: "Assignment removed" },
+    errorToast: { title: "Could not remove assignment" },
+    invalidateQueries: family?.id ? [['assignments-list', family.id]] : []
+  });
 };

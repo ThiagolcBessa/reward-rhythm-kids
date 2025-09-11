@@ -1,60 +1,53 @@
-// src/hooks/use-mutation-toasts.ts
-import { useMutation, UseMutationOptions, QueryClient } from "@tanstack/react-query";
-import { notifyError, notifySuccess, pgFriendlyMessage } from "@/lib/notify";
-import { useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { notifySuccess, notifyError } from '@/lib/notify';
 
-type Key = readonly unknown[];
+interface MutationConfig<TData, TError, TVariables> {
+  mutationFn: (variables: TVariables) => Promise<TData>;
+  onSuccess?: (data: TData, variables: TVariables) => void;
+  onError?: (error: TError, variables: TVariables) => void;
+  successToast?: { title: string; description?: string };
+  errorToast?: { title: string; description?: string };
+  invalidateQueries?: string[][];
+}
 
-type ToastOpts<TData = any> = {
-  success?: { title: string; description?: string } | ((data: TData) => { title: string; description?: string });
-  error?: { title: string; description?: string }; // description will be replaced by pgFriendlyMessage(err)
-  invalidate?: Key[];
-  refetch?: Key[];
-  onSuccessExtra?: (data: TData) => void | Promise<void>;
-  onErrorExtra?: (err: any) => void | Promise<void>;
-};
+export const useMutationWithToasts = <TData, TVariables, TError = Error>(
+  config: MutationConfig<TData, TError, TVariables>
+) => {
+  const queryClient = useQueryClient();
 
-type MutationOpts<TData, TVariables> = {
-  onSuccess?: (data: TData, vars: TVariables, ctx: unknown) => void | Promise<void>;
-  onError?: (err: any, vars: TVariables, ctx: unknown) => void | Promise<void>;
-} & Omit<UseMutationOptions<TData, any, TVariables, unknown>, "mutationFn" | "onSuccess" | "onError">;
-
-export function useMutationWithToasts<TData = any, TVariables = any>(
-  mutationFn: (vars: TVariables) => Promise<TData>,
-  opts: ToastOpts<TData> = {},
-  reactOpts?: MutationOpts<TData, TVariables>
-) {
-  const qc = useQueryClient();
-
-  return useMutation<TData, any, TVariables>({
-    ...(reactOpts || {}),
-    mutationFn,
-    onSuccess: async (data, vars, ctx) => {
-      if (opts.success) {
-        const toastConfig = typeof opts.success === 'function' 
-          ? opts.success(data) 
-          : opts.success;
-        notifySuccess(toastConfig.title, toastConfig.description);
+  return useMutation<TData, TError, TVariables>({
+    mutationFn: config.mutationFn,
+    onSuccess: (data, variables) => {
+      if (config.successToast) {
+        notifySuccess(config.successToast.title, config.successToast.description);
       }
-      await invalidateOrRefetch(qc, opts);
-      if (opts.onSuccessExtra) await opts.onSuccessExtra(data);
-      if (reactOpts?.onSuccess) await reactOpts.onSuccess(data, vars, ctx);
+      
+      if (config.invalidateQueries) {
+        config.invalidateQueries.forEach(queryKey => {
+          queryClient.invalidateQueries({ queryKey });
+        });
+      }
+      
+      config.onSuccess?.(data, variables);
     },
-    onError: async (err, vars, ctx) => {
-      const friendly = pgFriendlyMessage(err);
-      const title = opts.error?.title ?? "Action failed";
-      notifyError(title, friendly);
-      if (opts.onErrorExtra) await opts.onErrorExtra(err);
-      if (reactOpts?.onError) await reactOpts.onError(err, vars, ctx);
-    },
+    onError: (error, variables) => {
+      if (config.errorToast) {
+        let errorMessage: string;
+        try {
+          if (typeof error === 'string') {
+            errorMessage = error;
+          } else if (error && typeof error === 'object' && 'message' in error) {
+            errorMessage = (error as any).message;
+          } else {
+            errorMessage = String(error);
+          }
+        } catch {
+          errorMessage = 'An error occurred';
+        }
+        notifyError(config.errorToast.title, config.errorToast.description || errorMessage);
+      }
+      
+      config.onError?.(error, variables);
+    }
   });
-}
-
-async function invalidateOrRefetch(qc: QueryClient, opts: ToastOpts<any>) {
-  if (opts.invalidate?.length) {
-    await Promise.all(opts.invalidate.map((k) => qc.invalidateQueries({ queryKey: k })));
-  }
-  if (opts.refetch?.length) {
-    await Promise.all(opts.refetch.map((k) => qc.refetchQueries({ queryKey: k })));
-  }
-}
+};

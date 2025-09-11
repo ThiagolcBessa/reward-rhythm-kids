@@ -83,7 +83,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       if (error) {
         console.error('Sign in error:', error);
-        notifyError("Sign in failed", pgFriendlyMessage(error));
+        notifyError("Sign in failed", pgFriendlyMessage(error.message));
       }
       
       return { error };
@@ -105,7 +105,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     });
     
     if (error) {
-      notifyError("Magic link failed", pgFriendlyMessage(error));
+      notifyError("Magic link failed", pgFriendlyMessage(error.message));
     } else {
       notifySuccess("Check your email", "We've sent you a magic link to sign in.");
     }
@@ -125,7 +125,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     });
     
     if (error) {
-      notifyError("Sign up failed", pgFriendlyMessage(error));
+      notifyError("Sign up failed", pgFriendlyMessage(error.message));
     } else {
       notifySuccess("Check your email", "We've sent you a confirmation link to complete your sign up.");
     }

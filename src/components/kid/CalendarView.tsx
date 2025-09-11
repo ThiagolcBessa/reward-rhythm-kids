@@ -34,8 +34,8 @@ const CalendarView: React.FC<CalendarViewProps> = ({ kidId: propKidId, viewType 
   const today = new Date();
   const todayISO = today.toISOString().split('T')[0];
 
-  const completeTaskMutation = useMutationWithToasts(
-    async ({ kidId, taskTemplateId, taskPoints }: { kidId: string; taskTemplateId: string; taskPoints: number }) => {
+  const completeTaskMutation = useMutationWithToasts({
+    mutationFn: async ({ kidId, taskTemplateId, taskPoints }: { kidId: string; taskTemplateId: string; taskPoints: number }) => {
       const { data, error } = await supabase.rpc('complete_task_for_date' as any, {
         p_kid_id: kidId,
         p_task_template_id: taskTemplateId,
@@ -45,24 +45,22 @@ const CalendarView: React.FC<CalendarViewProps> = ({ kidId: propKidId, viewType 
       if (error) throw error;
       return { balance: data as number, points: taskPoints };
     },
-    {
-      success: (data) => ({ 
-        title: "Task completed", 
-        description: `+${data.points} points`
-      }),
-      error: { title: "Task completion failed" },
-      invalidate: [
-        ['tasks-for-date', kidId, todayISO],
-        ['kid-balance', kidId],
-        ['tasks-calendar', kidId, currentWeek.weekStartISO, currentWeek.weekEndISO]
-      ],
-      onSuccessExtra: (data) => {
-        // Show confetti
-        setShowConfetti(true);
-        setTimeout(() => setShowConfetti(false), 3000);
-      }
+    successToast: {
+      title: "Task completed", 
+      description: "Great job!"
+    },
+    errorToast: { title: "Task completion failed" },
+    invalidateQueries: [
+      ['tasks-for-date', kidId, todayISO],
+      ['kid-balance', kidId],
+      ['tasks-calendar', kidId, currentWeek.weekStartISO, currentWeek.weekEndISO]
+    ],
+    onSuccess: (data) => {
+      // Show confetti
+      setShowConfetti(true);
+      setTimeout(() => setShowConfetti(false), 3000);
     }
-  );
+  });
 
   // Get week days using utility
   const weekDays = getWeekDays(currentWeek.weekStart);

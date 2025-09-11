@@ -232,8 +232,8 @@ export const useCompleteTaskForDate = () => {
 export const useRedeemReward = () => {
   const queryClient = useQueryClient();
   
-  return useMutationWithToasts(
-    async ({ kidId, rewardId }: { kidId: string; rewardId: string }) => {
+  return useMutationWithToasts({
+    mutationFn: async ({ kidId, rewardId }: { kidId: string; rewardId: string }) => {
       const { data, error } = await supabase.rpc('redeem_reward', {
         p_kid_id: kidId,
         p_reward_id: rewardId,
@@ -242,23 +242,26 @@ export const useRedeemReward = () => {
       if (error) throw error;
       return { data, kidId };
     },
-    {
-      success: { title: "Request sent", description: "Waiting for approval" },
-      error: { title: "Could not request reward" },
-      invalidate: [], // Will be handled via additional mutation options
-      onSuccessExtra: (result) => {
-        // Manual invalidation with kidId from result
-        queryClient.invalidateQueries({ queryKey: ['kid-balance', result.kidId] });
-        queryClient.invalidateQueries({ queryKey: ['kid-redemptions', result.kidId] });
-      }
+    successToast: { title: "Request sent", description: "Waiting for approval" },
+    errorToast: { title: "Could not request reward" },
+    invalidateQueries: [
+      ['kid-balance', 'placeholder'], // Will be replaced with actual kidId
+      ['kid-redemptions', 'placeholder'] // Will be replaced with actual kidId
+    ],
+    onSuccess: (result) => {
+      // Manual invalidation with kidId from result
+      queryClient.invalidateQueries({ queryKey: ['kid-balance', result.kidId] });
+      queryClient.invalidateQueries({ queryKey: ['kid-redemptions', result.kidId] });
     }
-  );
+  });
 };
 
 // Mutation to grant bonus
 export const useGrantBonus = () => {
-  return useMutationWithToasts(
-    async ({ kidId, period }: { kidId: string; period: 'daily' | 'weekly' }) => {
+  const queryClient = useQueryClient();
+  
+  return useMutationWithToasts({
+    mutationFn: async ({ kidId, period }: { kidId: string; period: 'daily' | 'weekly' }) => {
       const { data, error } = await supabase.rpc('grant_bonus', {
         p_kid_id: kidId,
         p_period: period,
@@ -267,23 +270,19 @@ export const useGrantBonus = () => {
       if (error) throw error;
       return { balance: data as number, kidId, period }; // Returns updated balance with context
     },
-    {
-      success: (result) => ({
-        title: "🏆 BONUS EARNED!", 
-        description: `Amazing! You got bonus points! New balance: ${result.balance}`
-      }),
-      error: { title: "Bonus already claimed", description: "You've already earned your bonus for this period!" },
-      invalidate: [],
-      onSuccessExtra: (result) => {
-        const queryClient = useQueryClient();
-        const today = new Date().toISOString().split('T')[0];
-        queryClient.invalidateQueries({ queryKey: ['tasks-for-date', result.kidId, today] });
-        queryClient.invalidateQueries({ queryKey: ['kid-balance', result.kidId] });
-        queryClient.invalidateQueries({ queryKey: ['kid-points-history', result.kidId] });
-        queryClient.invalidateQueries({ queryKey: ['bonus-eligibility', result.kidId, result.period] });
-      }
+    successToast: {
+      title: "🏆 BONUS EARNED!", 
+      description: "Amazing! You got bonus points!"
+    },
+    errorToast: { title: "Bonus already claimed", description: "You've already earned your bonus for this period!" },
+    onSuccess: (result) => {
+      const today = new Date().toISOString().split('T')[0];
+      queryClient.invalidateQueries({ queryKey: ['tasks-for-date', result.kidId, today] });
+      queryClient.invalidateQueries({ queryKey: ['kid-balance', result.kidId] });
+      queryClient.invalidateQueries({ queryKey: ['kid-points-history', result.kidId] });
+      queryClient.invalidateQueries({ queryKey: ['bonus-eligibility', result.kidId, result.period] });
     }
-  );
+  });
 };
 
 // Hook to check bonus eligibility

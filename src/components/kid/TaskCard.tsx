@@ -21,8 +21,8 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
   const todayISO = today.toISOString().split('T')[0];
   const weekInfo = getWeekInfo(today);
 
-  const completeTaskMutation = useMutationWithToasts(
-    async ({ kidId, taskTemplateId }: { kidId: string; taskTemplateId: string }) => {
+  const completeTaskMutation = useMutationWithToasts({
+    mutationFn: async ({ kidId, taskTemplateId }: { kidId: string; taskTemplateId: string }) => {
       const { data, error } = await supabase.rpc('complete_task_for_date' as any, {
         p_kid_id: kidId,
         p_task_template_id: taskTemplateId,
@@ -32,23 +32,21 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
       if (error) throw error;
       return data as number; // Returns updated points balance
     },
-    {
-      success: { 
-        title: "Task completed", 
-        description: `+${task.task_template.base_points} points` 
-      },
-      error: { title: "Task completion failed" },
-      invalidate: [
-        ['tasks-for-date', kidId, todayISO],
-        ['kid-balance', kidId],
-        ['tasks-calendar', kidId, weekInfo.weekStartISO, weekInfo.weekEndISO]
-      ],
-      onSuccessExtra: () => {
-        setShowConfetti(true);
-        setTimeout(() => setShowConfetti(false), 3000);
-      }
+    successToast: { 
+      title: "Task completed", 
+      description: `+${task.task_template.base_points} points` 
+    },
+    errorToast: { title: "Task completion failed" },
+    invalidateQueries: [
+      ['tasks-for-date', kidId, todayISO],
+      ['kid-balance', kidId],
+      ['tasks-calendar', kidId, weekInfo.weekStartISO, weekInfo.weekEndISO]
+    ],
+    onSuccess: () => {
+      setShowConfetti(true);
+      setTimeout(() => setShowConfetti(false), 3000);
     }
-  );
+  });
 
   const isCompleted = task.status === 'done';
   const isPending = task.status === 'pending';

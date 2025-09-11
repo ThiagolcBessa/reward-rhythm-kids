@@ -1,25 +1,31 @@
-// src/lib/notify.ts
-import { showToast } from "@/lib/toast-bus";
+import { showToast } from './toast-bus';
 
-export const notifySuccess = (title: string, description?: string) =>
-  showToast({ title, description });
+export const notifySuccess = (title: string, description?: string) => {
+  showToast({ title, description, variant: 'default' });
+};
 
-export const notifyError = (title: string, description?: string) =>
-  showToast({ title, description, variant: "destructive" });
-
-// Map common PG errors to friendly messages
-export function pgFriendlyMessage(err: unknown): string {
-  const msg = String((err as any)?.message || err || "");
-  const code = (err as any)?.code || (err as any)?.error?.code;
-
-  if (code === "23505" || /duplicate key value/i.test(msg)) {
-    return "This record already exists.";
+export const notifyError = (title: string, description?: string) => {
+  // Handle common Postgres error codes with friendly messages
+  let friendlyDescription = description;
+  
+  if (description?.includes('23505')) {
+    friendlyDescription = 'This item already exists';
+  } else if (description?.includes('23503')) {
+    friendlyDescription = 'Cannot delete - item is being used elsewhere';
+  } else if (description?.includes('42501')) {
+    friendlyDescription = 'You do not have permission for this action';
   }
-  if (code === "42501" || /rls|permission denied/i.test(msg)) {
-    return "You don't have permission to perform this action.";
+  
+  showToast({ title, description: friendlyDescription, variant: 'destructive' });
+};
+
+export const pgFriendlyMessage = (error: string): string => {
+  if (error.includes('23505')) {
+    return 'This item already exists';
+  } else if (error.includes('23503')) {
+    return 'Cannot delete - item is being used elsewhere';
+  } else if (error.includes('42501')) {
+    return 'You do not have permission for this action';
   }
-  if (/network|fetch|failed to fetch/i.test(msg)) {
-    return "Network error. Check your connection and try again.";
-  }
-  return msg;
-}
+  return error;
+};
