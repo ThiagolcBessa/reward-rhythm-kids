@@ -4,8 +4,9 @@ import Confetti from 'react-confetti';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { useCompleteTask } from '@/hooks/use-supabase-rpc';
+import { useCompleteTaskForDate } from '@/hooks/use-supabase-rpc';
 import type { DailyTask } from '@/hooks/use-supabase-rpc';
+import { useParams } from 'react-router-dom';
 
 interface TaskCardProps {
   task: DailyTask;
@@ -14,28 +15,35 @@ interface TaskCardProps {
 export const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
   const [showConfetti, setShowConfetti] = useState(false);
   const { toast } = useToast();
-  const completeTaskMutation = useCompleteTask();
+  const { kidId } = useParams<{ kidId: string }>();
+  const completeTaskMutation = useCompleteTaskForDate();
 
   const isCompleted = task.status === 'done';
+  const isPending = task.status === 'pending';
 
   const handleComplete = async () => {
+    if (!kidId || !isPending) return;
+    
     try {
-      const newBalance = await completeTaskMutation.mutateAsync(task.id);
+      const newBalance = await completeTaskMutation.mutateAsync({
+        kidId,
+        taskTemplateId: task.task_template_id,
+      });
       
       // Show confetti
       setShowConfetti(true);
       setTimeout(() => setShowConfetti(false), 3000);
       
-      // Success toast
+      // Success toast with points earned
       toast({
-        title: "🎉 Amazing job!",
-        description: `You earned ${task.task_template.base_points} points! New balance: ${newBalance} points`,
+        title: "🎉 Task completed!",
+        description: `+${task.task_template.base_points} points earned!`,
         duration: 4000,
       });
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Oops!",
-        description: "Something went wrong. Please try again!",
+        description: error.message || "Something went wrong. Please try again!",
         variant: "destructive",
       });
     }
@@ -84,24 +92,26 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
             </div>
           </div>
 
-          <Button
-            onClick={handleComplete}
-            disabled={isCompleted || completeTaskMutation.isPending}
-            size="lg"
-            className={`rounded-2xl min-w-[64px] h-16 ${
-              isCompleted
-                ? 'bg-kid-success text-white cursor-not-allowed'
-                : 'bg-kid-primary hover:bg-kid-primary/90 text-white active:scale-95'
-            }`}
-          >
-            {completeTaskMutation.isPending ? (
-              <div className="animate-spin rounded-full h-6 w-6 border-2 border-white border-t-transparent" />
-            ) : isCompleted ? (
+          {isPending && (
+            <Button
+              onClick={handleComplete}
+              disabled={completeTaskMutation.isPending}
+              size="lg"
+              className="bg-kid-primary hover:bg-kid-primary/90 text-white active:scale-95 rounded-2xl min-w-[64px] h-16"
+            >
+              {completeTaskMutation.isPending ? (
+                <div className="animate-spin rounded-full h-6 w-6 border-2 border-white border-t-transparent" />
+              ) : (
+                <Circle className="h-8 w-8" />
+              )}
+            </Button>
+          )}
+
+          {isCompleted && (
+            <div className="bg-kid-success text-white cursor-not-allowed rounded-2xl min-w-[64px] h-16 flex items-center justify-center">
               <CheckCircle className="h-8 w-8" />
-            ) : (
-              <Circle className="h-8 w-8" />
-            )}
-          </Button>
+            </div>
+          )}
         </div>
       </Card>
     </>

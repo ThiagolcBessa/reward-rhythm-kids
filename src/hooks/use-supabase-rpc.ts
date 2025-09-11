@@ -79,25 +79,37 @@ export const useKidBalance = (kidId: string) => {
   });
 };
 
-// Hook to get today's tasks for a kid
+// Hook to get today's tasks for a kid using get_tasks_for_date RPC
 export const useKidTodayTasks = (kidId: string) => {
+  const today = new Date().toISOString().split('T')[0]; // Format: YYYY-MM-DD
+  
   return useQuery({
-    queryKey: ['today-tasks', kidId],
+    queryKey: ['tasks-for-date', kidId, today],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_today_tasks' as any, {
+      const { data, error } = await supabase.rpc('get_tasks_for_date' as any, {
         p_kid_id: kidId,
+        p_date: today,
       });
       
       if (error) throw error;
       
       // Transform RPC response to match expected UI shape
-      const rpcData = data as unknown as TodayTaskRpcResponse[];
+      const rpcData = data as unknown as Array<{
+        task_template_id: string;
+        title: string;
+        icon_emoji: string;
+        base_points: number;
+        daily_task_id: string | null;
+        status: string;
+        points_awarded: number | null;
+      }>;
+      
       const transformedData = rpcData.map(task => ({
-        id: task.daily_task_id,
+        id: task.daily_task_id || `pending-${task.task_template_id}`,
         kid_id: kidId,
-        task_template_id: '', // Not needed by UI
-        due_date: task.due_date,
-        status: task.status,
+        task_template_id: task.task_template_id,
+        due_date: today,
+        status: task.status || 'pending',
         points_awarded: task.points_awarded,
         task_template: {
           title: task.title,
@@ -159,32 +171,32 @@ export const useKidPointsHistory = (kidId: string) => {
   });
 };
 
-// Mutation to complete a task
-export const useCompleteTask = () => {
+// Mutation to complete a task using complete_task_for_date
+export const useCompleteTaskForDate = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async (dailyTaskId: string) => {
-      const { data, error } = await supabase.rpc('complete_task', {
-        p_daily_task_id: dailyTaskId,
+    mutationFn: async ({ kidId, taskTemplateId }: { kidId: string; taskTemplateId: string }) => {
+      const today = new Date().toISOString().split('T')[0]; // Format: YYYY-MM-DD
+      
+      const { data, error } = await supabase.rpc('complete_task_for_date' as any, {
+        p_kid_id: kidId,
+        p_task_template_id: taskTemplateId,
+        p_date: today,
       });
       
       if (error) throw error;
       return data as number; // Returns updated points balance
     },
-    onSuccess: (_, variables, context) => {
-      // We need the kidId to invalidate specific queries
-      // Extract kidId from the context or get it from current queries
-      const cachedQueries = queryClient.getQueriesData({ queryKey: ['today-tasks'] });
+    onSuccess: (newBalance, { kidId }) => {
+      const today = new Date().toISOString().split('T')[0];
       
-      cachedQueries.forEach(([queryKey]) => {
-        if (Array.isArray(queryKey) && queryKey[0] === 'today-tasks') {
-          const kidId = queryKey[1];
-          queryClient.invalidateQueries({ queryKey: ['today-tasks', kidId] });
-          queryClient.invalidateQueries({ queryKey: ['kid-balance', kidId] });
-          queryClient.invalidateQueries({ queryKey: ['kid-points-history', kidId] });
-        }
-      });
+      // Refetch the specific queries as requested
+      queryClient.invalidateQueries({ queryKey: ['tasks-for-date', kidId, today] });
+      queryClient.invalidateQueries({ queryKey: ['kid-balance', kidId] });
+      queryClient.invalidateQueries({ queryKey: ['kid-points-history', kidId] });
+      
+      return newBalance;
     },
   });
 };
@@ -225,7 +237,8 @@ export const useGrantBonus = () => {
       return data as number; // Returns updated balance
     },
     onSuccess: (_, { kidId, period }) => {
-      queryClient.invalidateQueries({ queryKey: ['today-tasks', kidId] });
+      const today = new Date().toISOString().split('T')[0];
+      queryClient.invalidateQueries({ queryKey: ['tasks-for-date', kidId, today] });
       queryClient.invalidateQueries({ queryKey: ['kid-balance', kidId] });
       queryClient.invalidateQueries({ queryKey: ['kid-points-history', kidId] });
       queryClient.invalidateQueries({ queryKey: ['bonus-eligibility', kidId, period] });
